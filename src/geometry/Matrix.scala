@@ -99,6 +99,9 @@ class Matrix( input: Seq[Seq[Double]] ) {
   }
   
   
+  /**
+   * Find a cofactor of a given element in matrix
+   */
   def cofactor(x:Int, y:Int):Double = {
     new Matrix((seq.take(y) ++ seq.drop(y+1)).map(b => b.take(x) ++ b.drop(x+1))).determinand * math.pow(-1, x + y)
     
