@@ -40,7 +40,7 @@ object TestApp extends SimpleSwingApplication  {
     val plane = new Plane(0,0,1, -10)
     val fp = new geometry.Point(0,0,11)
     
-    val camera = new Camera(plane, fp)
+    val camera = new Camera(plane, fp, new Vector(0,0,1))
   
     
   def onKeyPress(keyCode: Value) = keyCode match {

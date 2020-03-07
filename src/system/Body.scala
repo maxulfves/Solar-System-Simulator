@@ -60,7 +60,7 @@ sealed abstract class Body(name:String, mass:Double, radius:Double, val location
   }
   
     def rk4(Δt: Double):Unit = {
-    
+      
       val k1 = netAccelerationAt(location) * Δt
       val k2 = netAccelerationAt(location + (k1*0.5 )) * Δt
       val k3 = netAccelerationAt(location + (k2*0.5)) * Δt
@@ -133,12 +133,12 @@ sealed abstract class Body(name:String, mass:Double, radius:Double, val location
   def getColor(): Color = {
     
     name match{
-      case "sun" => Color.PINK
+      case "sun" => Color.YELLOW
       case "earth" => Color.GREEN
       case "mars" => Color.RED
       case "mercury" => Color.RED
       case "venus" => Color.LIGHT_GRAY
-      case "jupiter" => new Color(100, 0,0)
+      case "jupiter" => new Color(100, 255,0)
       case "saturn" => new Color(100, 100, 0)
       case "neptune" => new Color(0,0,100)
       case "uranus" => new Color(100, 100, 200)

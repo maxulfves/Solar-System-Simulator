@@ -37,7 +37,7 @@ object SimulatorApp extends SimpleSwingApplication  {
     
     val system:System = new System()
     
-    val sun = new Planet(
+    val sun = new Star(
         "sun", 
         1.989e30, //Mass
         696340e3, //Radius
@@ -61,7 +61,7 @@ object SimulatorApp extends SimpleSwingApplication  {
       new Vector(2.27987e11, 0, 0), 
       new Vector(0, 24.1e3, 0), 
       system)
-  
+      
     
     val mercury = new Planet(
       "mercury", 
@@ -130,28 +130,26 @@ object SimulatorApp extends SimpleSwingApplication  {
     
     
     val fps = 24  *3
-    
+    //5.9e7
+    //11e11
+    //1e8
     val d:Double = 5.9e7 //m
     val f:Double = 0.200 //m
-
+    
     val camera = new Camera(
-      new Plane(0,0,1.0,-d),
-      new geometry.Point(0,0, d + f)
+      new Plane(0,0,-1.0,d),
+      new geometry.Point(0, 0, (d + f) ),
+      new geometry.Vector(0,-1,0)
     )
     
-
     
-  def onKeyPress(keyCode: Value) = keyCode match {
-    case Key.Plus    => camera.zoomIn()
-    case Key.Minus   => camera.zoomOut()
-    case _ => // do nothing
-  }
+    def onKeyPress(keyCode: Value) = keyCode match {
+      case Key.Plus    => camera.zoomIn()
+      case Key.Minus   => camera.zoomOut()
+      case _ => // do nothing
+    }
     
-  
-  def onPaint(g: Graphics2D) {
-
-  }
-  
+    
     //Test
     val pauseButton = new Button("Pause")
     val restartButton  = new Button("Restart"){

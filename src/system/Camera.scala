@@ -10,10 +10,16 @@ import java.awt.Shape
 
 //import o1._
 
-class Camera(val plane:Plane, val focalPoint:Point) {
+class Camera(val plane:Plane, val focalPoint:Point, val vectorUp:Vector) {
   
-  //val focalPoint:Vector = new Vector(0,0,0)
-  //val plane:Plane = new Plane(new Vector(0,0,-1), new Vector(100,0,0))
+  val yVect = vectorUp.unit
+  
+  val xVect = yVect.crossP(plane.normal).unit
+  val origo2D:Point = plane.closestPointTo(focalPoint)
+  
+  println("Z" + plane.normal)
+  println("Y" + yVect)
+  println("X" + xVect)
   
   /** Zooms in by moving the focalpoint away from the plane
    * 
@@ -22,6 +28,21 @@ class Camera(val plane:Plane, val focalPoint:Point) {
     val f = plane.distanceTo(focalPoint)
     focalPoint.z += 0.01
     println(f)
+    
+  }
+  
+  private def componentFactors(point: Point):(Int, Int) = {
+    val vect = new Vector(origo2D.x - point.x, origo2D.y - point.y, origo2D.z - point.z)
+    val A = new Matrix(Seq(
+        Seq(xVect.x,yVect.x, vect.x),
+        Seq(xVect.y,yVect.y, vect.y),
+        Seq(xVect.z,yVect.z, vect.z)
+    ))
+    
+    val ret = A.gaussJordan
+    (ret(0).toInt, ret(1).toInt)
+    
+    
     
   }
   
@@ -59,8 +80,8 @@ class Camera(val plane:Plane, val focalPoint:Point) {
       //Find the projected center point & velocity direction
       val line =       ( (body.location - focalPoint.posVector) ).toLine(focalPoint)
       val vector_loc = ( body.location  - focalPoint.posVector + (body.velocity * geometry.Constants.dt)) .toLine(focalPoint)
-      val vector_acc = ( body.location  - focalPoint.posVector + (body.acceleration * math.pow(geometry.Constants.dt, 2)   )) .toLine(focalPoint)
-      println(body.acceleration.magnitude)
+      val vector_acc = ( body.location  - focalPoint.posVector + (body.acceleration * math.pow(geometry.Constants.dt, 2) * 0.2   )) .toLine(focalPoint)
+      
       
       val o_location:Point = plane.intersects( line )
       val v_loc:Point = plane.intersects( vector_loc )
@@ -76,7 +97,6 @@ class Camera(val plane:Plane, val focalPoint:Point) {
       val r_location:Point = plane.intersects( line_r )
       
       
-      
       val rad2:Double = (o_location.posVector - r_location.posVector).magnitude 
       /*
       if(body.getName == "sun"){
@@ -85,20 +105,30 @@ class Camera(val plane:Plane, val focalPoint:Point) {
       
       //Sets the projected x and y values 
       
-      var x = (o_location.x )
-      var y = (o_location.y )
       
-
+      val locVect = componentFactors(o_location)
       
-      //Sets the projected x and y values of the acceleration vector
-      val accVect:(Int, Int) = ((size._1/2 + a_loc.x).toInt, (size._2/2 + a_loc.y).toInt)
+      var x =  (locVect._1 )
+      var y =  (locVect._2 )
       
+      val vLoc = componentFactors(v_loc)
       //Sets the projected x and y values of the velocity vector      
-      val velVect:(Int, Int) = ((size._1/2 + v_loc.x).toInt, (size._2/2 + v_loc.y).toInt )
+      val velVect:(Int, Int) = ((size._1/2 + vLoc._1).toInt, (size._2/2 + vLoc._2).toInt )
+      
+      
+      val aLoc = componentFactors(a_loc)
+      //Sets the projected x and y values of the acceleration vector
+      val accVect:(Int, Int) = ((size._1/2 + aLoc._1).toInt, (size._2/2 + aLoc._2).toInt)
+      
       
       
       //Draw what's seen onto the canvas. 
-      val radius = 3
+      var radius = 3
+      if(body.getName == "sun" ){
+        radius = 10
+      }
+      
+      
       val centerX = size._1/2 + x
       val centerY = size._2/2 + y
       

@@ -26,6 +26,11 @@ class Plane(var A:Double, var B:Double, var C:Double, var D:Double) {
     d
   }
   
+  
+  
+  def closestPointTo(point:Point):Point = this.intersects(new Line(point, normal)) 
+  
+  
   def intersects(line: Line): Point = {
     //Lägg linjens x,y,z värden in i P och lös ut t. 
     val t:Double = 
