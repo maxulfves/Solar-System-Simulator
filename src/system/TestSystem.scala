@@ -44,8 +44,8 @@ object TestApp extends SimpleSwingApplication  {
   
     
   def onKeyPress(keyCode: Value) = keyCode match {
-    case Key.Plus    => camera.zoomIn()
-    case Key.Minus   => camera.zoomOut()
+    case Key.Plus    => camera.zoomIn
+    case Key.Minus   => camera.zoomOut
     case otherKey => // do nothing
   }
     

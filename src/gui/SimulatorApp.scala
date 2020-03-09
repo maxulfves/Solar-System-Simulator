@@ -133,19 +133,35 @@ object SimulatorApp extends SimpleSwingApplication  {
     //5.9e7
     //11e11
     //1e8
-    val d:Double = 5.9e7 //m
-    val f:Double = 0.200 //m
+    val d:Double = 2.29e12  //m
+    val f:Double = 0.030   //m
     
+    /*
     val camera = new Camera(
       new Plane(0,0,-1.0,d),
       new geometry.Point(0, 0, (d + f) ),
       new geometry.Vector(0,-1,0)
+    )*/
+    
+    println("-----")
+    
+    val plane = new Plane(-math.sqrt(2), 0, -math.sqrt(2), d * 2 )
+    
+    println(plane.distanceTo(new geometry.Point(0,0,0) ) )
+    
+    
+    val camera = new Camera(
+      new Plane(0,-1.0,0,d),
+      new geometry.Point(0, (d + f), 0 ),
+      new geometry.Vector(0,0,-1)
     )
     
     
     def onKeyPress(keyCode: Value) = keyCode match {
-      case Key.Plus    => camera.zoomIn()
-      case Key.Minus   => camera.zoomOut()
+      case Key.Plus    => camera.zoomIn
+      case Key.Minus   => camera.zoomOut
+      case Key.Up      => camera.rotate(math.Pi * 2.0 / 36)
+      case Key.Down    => camera.rotate(- math.Pi * 2.0 / 36)
       case _ => // do nothing
     }
     
@@ -207,7 +223,6 @@ object SimulatorApp extends SimpleSwingApplication  {
           contents += new MenuItem( "Toggle vectors" )
       }
         contents += new Menu("Window") {
-          mnemonic = Key.W
           contents += new MenuItem( "Show view..." )
       }
         contents += new Menu("Help") {
@@ -317,7 +332,7 @@ object SimulatorApp extends SimpleSwingApplication  {
     reactions += {
       case KeyPressed(_, key, _, _) =>
         onKeyPress(key)
-        repaint
+        
     }
     
     override def paint(g: Graphics2D) {
@@ -338,7 +353,9 @@ object SimulatorApp extends SimpleSwingApplication  {
       
       g.drawString(output, winSize._1 - back - 8, winSize._2- 8)
       prompt.text = output
-        
+      
+      
+      
       Thread.sleep(1000/fps)
       repaint()
       revalidate()
@@ -347,9 +364,11 @@ object SimulatorApp extends SimpleSwingApplication  {
     }
   }
   
+  
+  
+  
   var i = 0
   def printOutput(){
-    println( i + "," +  (sun.location).magnitude)
     i+=1
   }
   

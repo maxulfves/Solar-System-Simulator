@@ -11,6 +11,15 @@ package geometry
 class Plane(var A:Double, var B:Double, var C:Double, var D:Double) {
   //Plane equation: Ax + By + Cz + D = 0
   
+  
+  def set( _A:Double, _B:Double,  _C:Double, _D:Double) = {
+    this.A = _A
+    this.B = _B
+    this.C = _C
+    this.D = _D
+    
+  }
+  
   def normal:Vector = new Vector(A, B, C)
   
   /**
@@ -20,9 +29,7 @@ class Plane(var A:Double, var B:Double, var C:Double, var D:Double) {
   def distanceTo(point: Point):Double = {
     val d:Double = math.abs(A * point.x + B * point.y + C * point.z + D) / 
                    normal.magnitude
-                   
-    
-    println(normal.magnitude)
+     
     d
   }
   

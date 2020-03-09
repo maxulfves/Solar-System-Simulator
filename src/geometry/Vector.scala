@@ -34,6 +34,31 @@ class Vector(var x:Double, var y:Double, var z:Double) {
       this.z * other.x - this.x * other.z,
       this.x * other.y - this.y * other.x)
   
+  def crossP(matrix:Matrix):Vector = {
+    var ret:Array[Double] = Array(0, 0, 0)
+    
+    for( i <- 0 until matrix.height){
+      ret(i) += matrix.seq(i)(0) * this.x
+      ret(i) += matrix.seq(i)(1) * this.y
+      ret(i) += matrix.seq(i)(2) * this.z
+    }
+    new Vector(ret(0), ret(1), ret(2))
+  }
+   
+  
+  def dotP(other:Vector):Double = {
+      this.x * other.x + this.y * other.y + this.z * other.z
+  }
+  
+  /** Angle between this vector and another vector.
+   *  @param other Another vector
+   * @returns Angle given in radians
+   */
+  def angle(other:Vector):Double = {
+    math.acos( this.dotP(other)/(this.magnitude * other.magnitude) )
+    
+  }
+  
   def toPoint():Point = new Point(x,y,z)
   
   def toLine(point: Point):Line = {
@@ -77,9 +102,12 @@ class Vector(var x:Double, var y:Double, var z:Double) {
     ???
   }*/
   
-  def *(other:Double):Vector = {
-    new Vector(x*other, y*other, z*other)
+  
+  def *(other:Number):Vector = {
+    new Vector(x*other.doubleValue(), y*other.doubleValue(), z*other.doubleValue())
   }
+  
+  
   
   def *(other:Vector):Vector = {
     new Vector(x*other.x, y*other.x, z*other.x)
