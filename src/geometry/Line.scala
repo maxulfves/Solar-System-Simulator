@@ -6,14 +6,13 @@ package geometry
  * 
  * @author Max Ulfves
  */
-class Line(val point:Point, val vector:Vector) {
+class Line(val point:Point, var vector:Vector) {
   val unit = vector.unit
-  
   /*
    * Line formula:
-   * x = xp + t * (xq - xp)
-   * y = yp + t * (yq - yp)
-   * z = zp + t * (zq - zp)
+   * x = x0 + t * (xi)
+   * y = y0 + t * (xj)
+   * z = z0 + t * (xk)
    */
     
   
@@ -21,13 +20,14 @@ class Line(val point:Point, val vector:Vector) {
    * Find the point at t:Double
    * @return A point.
    */
+  
   def at(t:Double):Point = {
-    point + (vector*t)
+    val ret = point + (vector * t )
+    ret
   }
   
   override def toString() = {
     "Line: x = (%f + (t * %f)), y = (%f + (t * %f)), z = (%f + (t * %f))".format(point.x, vector.x, point.y, vector.y, point.z, vector.z )
-    
   }
   
 }

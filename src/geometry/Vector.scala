@@ -18,7 +18,7 @@ class Vector(var x:Double, var y:Double, var z:Double) {
     
     val rY = Math.round(y*100.0)/100.0
     val rZ = Math.round(z*100.0)/100.0
-    "(" + roundDouble(x) + "/" + roundDouble(y) + "/" + roundDouble(z) + ")"
+    "(" + x+ " | " + y + " | " + z + ")"
   }
   
   def copy = new Vector(x,y,z)
@@ -88,9 +88,6 @@ class Vector(var x:Double, var y:Double, var z:Double) {
   }
   
   def /(value:Double):Vector = {
-    /*x = x/value
-    y = y/value
-    z = z/value*/
     new Vector(x/value,y/value,z/value)
   }
   
@@ -103,8 +100,8 @@ class Vector(var x:Double, var y:Double, var z:Double) {
   }*/
   
   
-  def *(other:Number):Vector = {
-    new Vector(x*other.doubleValue(), y*other.doubleValue(), z*other.doubleValue())
+  def *(other:Double):Vector = {
+    new Vector(  (x*other.doubleValue()) , (y*other.doubleValue()), (z*other.doubleValue())  )
   }
   
   

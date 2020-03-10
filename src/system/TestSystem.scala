@@ -7,14 +7,15 @@ import javax.swing.ImageIcon
 
 // This program is introduced in Chapter 12.3 of the ebook.
 
-import swing._
 import event._
 import geometry._
 import java.awt.image.BufferedImage
 import java.awt.Color
 
-
+/*
 object TestApp extends SimpleSwingApplication  {
+  
+  
     import event.Key._
     import java.awt.{Dimension, Graphics2D, Graphics, Image, Rectangle}
     import java.awt.{Color => AWTColor}
@@ -90,5 +91,5 @@ object TestApp extends SimpleSwingApplication  {
       
     }
   }
-}
+}*/
   

@@ -32,4 +32,8 @@ class Point(var x:Double, var y:Double, var z:Double) {
     this.z = other.getZ
   }
   
+  def distanceTo(other:Point):Double = {
+    new Vector(this.x - other.x, this.y-other.y, this.z - other.z).magnitude
+  }
+  
 }

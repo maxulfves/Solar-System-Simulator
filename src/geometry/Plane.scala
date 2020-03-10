@@ -41,8 +41,8 @@ class Plane(var A:Double, var B:Double, var C:Double, var D:Double) {
   def intersects(line: Line): Point = {
     //Lägg linjens x,y,z värden in i P och lös ut t. 
     val t:Double = 
-      -(A * line.point.x + B * line.point.y + C * line.point.z + D ) /
-      ( A * line.vector.x + B * line.vector.y + C * line.vector.z )
+      -(  (A * line.point.x) + (B * line.point.y) +  (C * line.point.z) + D ) /
+       ( (A * line.vector.x) + (B * line.vector.y) + (C * line.vector.z)   )
       
       //val t:Double = ( (A * line.xp + B * line.yp + C * line.zp + D) / (A * (line.xp - line.xq) + B * (line.yp-line.yq) + C * (line.zp-line.zq)) ) 
     //The line crosses the plane at f(t) = line.at(t)

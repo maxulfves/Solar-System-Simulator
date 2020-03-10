@@ -42,15 +42,15 @@ object SimulatorApp extends SimpleSwingApplication  {
         1.989e30, //Mass
         696340e3, //Radius
         new Vector(0, 0, 0),  //Position
-        new Vector(0, 12.27, 0),  //Velocity
+        new Vector(0.001, 12.27, 0.001),  //Velocity
         system)
     
     val earth = new Planet(
       "earth", 
       5.972e24, 
       6371e3,
-      new Vector(1.49598e11, 0, 0), 
-      new Vector(0, 29.78e3, 0), 
+      new Vector(1.49598e11, 0, 0.01), 
+      new Vector(0, 29.78e3, 0.0), 
       system)
     
     
@@ -129,12 +129,13 @@ object SimulatorApp extends SimpleSwingApplication  {
     */
     
     
-    val fps = 24  *3
-    //5.9e7
-    //11e11
-    //1e8
-    val d:Double = 2.29e12  //m
-    val f:Double = 0.030   //m
+    val fps = 24 
+    
+    // 5.96e8  --- 2
+    // 2.29e12 --- 0.030
+    
+    val d:Double = 10e8  //m
+    val f:Double = 2.0    //m
     
     /*
     val camera = new Camera(
@@ -143,28 +144,30 @@ object SimulatorApp extends SimpleSwingApplication  {
       new geometry.Vector(0,-1,0)
     )*/
     
-    println("-----")
+    //println("-----")
     
     val plane = new Plane(-math.sqrt(2), 0, -math.sqrt(2), d * 2 )
     
-    println(plane.distanceTo(new geometry.Point(0,0,0) ) )
-    
-    
     val camera = new Camera(
-      new Plane(0,-1.0,0,d),
-      new geometry.Point(0, (d + f), 0 ),
-      new geometry.Vector(0,0,-1)
+      new Plane(0, 0, 1.0,d),
+      new geometry.Point(0, 0, -(d + f) ),
+      new geometry.Vector(0,1,0)
     )
     
-    
+    val angle = (math.Pi * 2.0) / 90.0
     def onKeyPress(keyCode: Value) = keyCode match {
       case Key.Plus    => camera.zoomIn
       case Key.Minus   => camera.zoomOut
-      case Key.Up      => camera.rotate(math.Pi * 2.0 / 36)
-      case Key.Down    => camera.rotate(- math.Pi * 2.0 / 36)
+      case Key.Up      => camera.rotateTo(angle, 0, 0)
+      case Key.Down    => camera.rotateTo(-angle, 0, 0)
+      case Key.Left    => camera.rotateTo(0, angle, 0)
+      case Key.Right   => camera.rotateTo(0, -angle, 0)
+      case Key.Period  => camera.rotateTo(0, 0, angle)
+      case Key.Comma   => camera.rotateTo(0, 0, -angle) 
       case _ => // do nothing
     }
     
+    camera.rotateTo(0, 0, 0)
     
     //Test
     val pauseButton = new Button("Pause")
@@ -332,9 +335,10 @@ object SimulatorApp extends SimpleSwingApplication  {
     reactions += {
       case KeyPressed(_, key, _, _) =>
         onKeyPress(key)
-        
     }
     
+    
+    val bg = new ImageIcon("milkyway.jpg")
     override def paint(g: Graphics2D) {
       //printOutput()
       
@@ -343,25 +347,45 @@ object SimulatorApp extends SimpleSwingApplication  {
       }
       
       val img:BufferedImage = camera.capture(system)
+      
+      
       g.drawImage(img, null, 0, 0)
       g.setColor(Color.GREEN)
       
       val output = system.getDate
+      val rotX = "X: " + camera.rotationX / (2 * math.Pi) * 360
+      val rotY = "Y: " + camera.rotationY / (2 * math.Pi) * 360
+      val rotZ = "Z: " + camera.rotationZ / (2 * math.Pi) * 360
+      
+      
       val font = new Font("Bob", 12, 20)
       g.setFont(font)
       val back = g.getFontMetrics(font).stringWidth(output)
+      val txtHeight = g.getFontMetrics(font).getHeight
       
-      g.drawString(output, winSize._1 - back - 8, winSize._2- 8)
+      
+      
+      g.drawString(output, winSize._1 - back - 8, winSize._2 - 10)
+      
+      g.drawString(rotX, winSize._1 - back - 8, winSize._2 - txtHeight *5)
+      g.drawString(rotY, winSize._1 - back - 8, winSize._2 - txtHeight *4)
+      g.drawString(rotZ, winSize._1 - back - 8, winSize._2 - txtHeight * 3)
+      
+      
       prompt.text = output
       
-      
+      time += 1
       
       Thread.sleep(1000/fps)
       repaint()
       revalidate()
       
-      
+      /*
+      println(time + "," + mercury.location.x)
+      println(time + "," + mercury.location.y)*/
     }
+    
+    var time = 0
   }
   
   
