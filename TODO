@@ -1,0 +1,10 @@
+Bugs:
+	- Focal point passes plane when zooming. 
+
+	
+Consider: 
+	- Find a better focal length, alt. divide distances logarithmicly. 
+	
+	
+TODO: 
+	- UI

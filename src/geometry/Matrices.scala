@@ -23,6 +23,15 @@ object Matrices {
     Array(- math.sin(angle), 0.0, math.cos(angle) )      
   ))
   
+  def zeroMatrix(size:Int):Matrix = new Matrix( Array.fill(size)(Array.fill(size)(0)) )
   
+  def identity(size:Int):Matrix = {
+    val mat = zeroMatrix(size)
+    for(i <- 0 until mat.height by 1){
+      mat.set(i, i, 1)
+    }
+    
+    mat
+  }
   
 }

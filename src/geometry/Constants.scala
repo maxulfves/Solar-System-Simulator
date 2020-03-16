@@ -6,6 +6,5 @@ object Constants {
   val au:Double = 1.49598e11
   val smass: Double = 2.0e30
   
-  val dt:Double = 60*60*24  * 0.8
-  
+  val dt:Double = 60 * 60 * 6
 }

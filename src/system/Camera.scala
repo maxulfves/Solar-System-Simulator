@@ -22,17 +22,36 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
   
   def focalLength = plane.distanceTo(focalPoint)
   
+  
   val radiusScale:Double = 2 << 3
   val radiusConstant:Double = 2.0 //px
   val imgRes:(Double, Double) = (1000, 1000 ) //px
-  val focalRange = (0.1, 8) //in meter
+  val focalRange = (0.1, 80) //in meter
   
+  ///TEST
+  val stars:Array[Point] = Array.tabulate(1000)( _ => makeStar(1e20))
+  
+  
+  def makeStar(radius:Double):Point = {
+    val theta = math.random() * math.Pi * 2.0
+    val x = math.random() * 2 - 1.0
+    val y = math.cos(theta) * math.sqrt(1 - (x * x))
+    val z = math.sin(theta) * math.sqrt(1 - (x * x))
+    //println(z + ", " +  y)
+    new Point(x * radius, y * radius ,z * radius)
+  }
+  
+  //END TEST
   
   private val closestPointOnPlane = plane.closestPointTo(focalPoint)
   
   
   
   val origo2D:Point = plane.closestPointTo(focalPoint)
+  
+  
+  var fLen2 = focalLength
+  def fPoint = origo2D + plane.normal * fLen2
   
   
   //These vectors describe the direction and magnitude of a pixel.
@@ -54,15 +73,37 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     val _xVect:Vector = xVect.copy
   }
   
+  
   var rotationX = 0.0
   var rotationY = 0.0
   var rotationZ = 0.0
   
   def rotateTo(angleX:Double, angleY:Double, angleZ:Double) = {
-    rotationX = (rotationX + angleX) % (math.Pi)
-    rotationY = (rotationY + angleY) % (math.Pi)
-    rotationZ = (rotationZ + angleZ) % (math.Pi)
-    val rm = Matrices.rotationX(rotationX ).crossP(Matrices.rotationY(rotationY)).crossP(Matrices.rotationZ(rotationZ))
+    rotationX = ( angleX) % (math.Pi * 2)
+    rotationY = ( angleY) % (math.Pi * 2)
+    rotationZ = ( angleZ) % (math.Pi * 2)
+    updateRotation
+  }
+  
+  def rotateBy(angleX:Double, angleY:Double, angleZ:Double) = {
+    rotationX = (rotationX + angleX) % (math.Pi * 2)
+    rotationY = (rotationY + angleY) % (math.Pi * 2)
+    rotationZ = (rotationZ + angleZ) % (math.Pi * 2)
+    
+    updateRotation
+  }
+  
+  def setFocalLength(flen:Double) = {
+    fLen2 = flen
+    updateRotation
+  }
+  
+  private def updateRotation{
+    var rm = Matrices.identity(3)
+      .crossP(Matrices.rotationY(rotationY))
+      .crossP(Matrices.rotationX(rotationX))
+      .crossP(Matrices.rotationZ(rotationZ))
+    
     
     //Rotate three arbitrary points on the image plane. 
     /*for(point <- planePoints){
@@ -78,7 +119,7 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     val d = - ((normal.x * origo2D.x) + (normal.y * origo2D.y) + (normal.z * origo2D.z) )
     
     //Rotate focalpoint
-    focalPoint.set(origo2D - (normal * focalLength) )
+    focalPoint.set(origo2D - (normal * fLen2) )
     
     
     xVect.set(original._xVect.crossP(rm).unit )
@@ -87,39 +128,26 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     
     plane.set(normal.x, normal.y, normal.z, d)
     t += 1
-    println(rotationX + ", " + focalLength)
-    //println(focalPoint.x + ", " + focalPoint.y)
     
-    //PRINT OUT ALL DATA
-    if(true){
-      println(xVect.angle(plane.normal))
-      println(yVect.angle(plane.normal))
-      println(yVect.angle(xVect))
-      
-      println("-------------------------")
-    }
     
   }
-  
-  
-  /** Zooms in by moving the focalpoint away from the plane
-   * 
-   */
-  def zoomIn = {
-    val newFocalLength:Double = focalLength + zoomStep
-    if(newFocalLength < focalRange._2){
-      focalPoint -= (plane.normal.unit * zoomStep)
-      //println("oFL: " + focalLength)
-      
-    }else{
-      focalPoint.set(closestPointOnPlane - (plane.normal.unit * focalRange._2) )
-      //println( "oFL: " + focalLength )
-    }
-    
-  }
-  
   
   private val zoomStep = 0.1
+  /** Zooms in by moving the focalpoint away from the plane
+   */
+  def zoomIn = {
+    val newFocalLength:Double = fLen2 + zoomStep
+    
+    if(newFocalLength < focalRange._2){
+      focalPoint -= (plane.normal.unit * zoomStep)
+      fLen2 += zoomStep
+    }else{
+      focalPoint.set(closestPointOnPlane - (plane.normal.unit * focalRange._2) )
+      fLen2 = focalRange._2
+    } 
+  }   
+  
+  
   /** Zooms out by moving the focalpoint closer to the plane in the direction of the normal vector. //TODO
    */
   def zoomOut = {
@@ -127,12 +155,11 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     
     if(newFocalLength > focalRange._1 ){
       focalPoint += (plane.normal.unit * zoomStep)
-      //println( "FL: " + focalLength )
+      fLen2 -= zoomStep
     }else{
       focalPoint.set(closestPointOnPlane - (plane.normal.unit * focalRange._1) )
-      //println( "FL: " + focalLength )
+      fLen2 = focalRange._1
     }
-    
   }
   
   
@@ -168,19 +195,29 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     
     val sorted = system.bodies.sortBy( n =>  (n.location - this.focalPoint.posVector).magnitude).reverse
     
+    /*
+     * ATTEMPT TO ADD STARS TO GIVE THE VIEWER A REFERENCE POINT. 
+    val stars_lines:Array[Line] = stars.map( star => ( (star.posVector - focalPoint.posVector) ).toLine(focalPoint) ) 
+    val starIntersection:Array[Point] = stars_lines.map(star => plane.intersects(star))
+    val stars2D:Array[(Double, Double)] = starIntersection.map(star => componentFactors(star))
+      .map( b =>  ( b._1 + imgRes._1, b._2 + imgRes._2) )
+    val rad = 10
+    for(star <- stars2D){
+      g2d.setColor(Color.WHITE)
+      g2d.fillOval( (star._1-rad).toInt , (star._2-rad).toInt , (2*rad).toInt, (2*rad).toInt );
+    }*/
+      
     for(body <- sorted) {
       //Find the projected center point & velocity direction
       val vector_pos:Line = ( (body.location - focalPoint.posVector) ).toLine(body.location.toPoint)
       val vector_loc:Line = ( body.location  - focalPoint.posVector + (body.velocity * geometry.Constants.dt)) .toLine(focalPoint)
       val vector_acc:Line = ( body.location  - focalPoint.posVector + (body.acceleration * math.pow(geometry.Constants.dt, 2) * 0.2   )) .toLine(focalPoint)
-      
+    
       
       //Find the intersection with camera plane. 
       val o_loc:Point = plane.intersects( vector_pos )
       val v_loc:Point = plane.intersects( vector_loc )
       val a_loc:Point = plane.intersects( vector_acc )
-      
-
       
       ///FINDING THE RADIUS
        //Find a unit vector perpendicular to the plane and multiply it by the radius 
@@ -203,13 +240,13 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
       val vLoc = componentFactors(v_loc)
       val aLoc = componentFactors(a_loc)
       val rLoc = componentFactors(r_location)
+        
       
       //Finally calculate the projected length of the radius.
       val egRad = math.sqrt( math.pow(centerProjection._1 - rLoc._1, 2) + math.pow(centerProjection._2 - rLoc._2, 2) )
       var radius:Double = radiusConstant + math.pow(egRad, 0.5)  * radiusScale
       
       if(body.getName == "earth"){
-        println(t + "," + egRad)
         t+=1
         
         /*
@@ -226,7 +263,7 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
         println("---------")*/
       }
       
-      //Sets the projected x and y values of the velocity vector      
+      //Sets the projected x and y values of the velocity vector arrow.  
       val velVect:(Int, Int) = ((imgRes._1/2 + vLoc._1).toInt, (imgRes._2/2 + vLoc._2).toInt )
       
       
@@ -256,7 +293,7 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
         g2d.setColor(body.getColor)
         g2d.fill(shape)
       }else{
-        println(body.getName)
+        //println(body.getName)
       }
       
 

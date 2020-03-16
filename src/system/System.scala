@@ -35,6 +35,10 @@ class System() {
     center/totalMass
   }
   
+  def remove(body:Body):Unit = {
+    bodies -= body
+  }
+  
   /**
    * Returns the total mass of the solar system.
    */

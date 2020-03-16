@@ -18,6 +18,8 @@ import system._
 import event.Key._
 import java.awt.{Dimension, Graphics2D, Graphics, Image, Rectangle}
 import java.awt.{Color => AWTColor}
+import javax.swing.JList
+import scala.collection.mutable.Buffer
        
 
 /*
@@ -31,9 +33,6 @@ object SimulatorApp extends SimpleSwingApplication  {
     val winSize = (1000, 1000)
     
     val day = geometry.Constants.dt
-    
-    //val increment = 1 * day
-    //val delaySec = 1
     
     val system:System = new System()
     
@@ -89,28 +88,11 @@ object SimulatorApp extends SimpleSwingApplication  {
     
     val saturn = new Planet(
       "saturn",
-      9543e-7 ,
-      2.85721e-4,
-      new Vector(10.012,0,0),
-      new Vector(0,2.042,0),
+      5.68e26 ,
+      58232e3,
+      new Vector(14.972e11, 0, 0),
+      new Vector(0,9.68e3,0),
       system)
-        /*
-    val neptune = new Planet(
-      "neptune",
-      5.14e-5 ,
-      1.6458787e-4,
-      new Vector(29.8801,0,0),
-      new Vector(0,1.1454,0),
-      system)  
-    
-    val uranus = new Planet(
-      "neptune",
-      4.3645e-5 ,
-      1.6953e-4,
-      new Vector(19.8138,0,0),
-      new Vector(0,1.43443,0),
-      system)
-    */
     
     system.addBody(sun)
     
@@ -119,22 +101,17 @@ object SimulatorApp extends SimpleSwingApplication  {
     system.addBody(mercury)
     system.addBody(venus)
     system.addBody(jupiter)
+    system.addBody(saturn)
     
     val initial = system.copy
     
-    /*
-    system.addBodysaturn)
-    system.addBodyuranus)
-    system.addBodyneptune)
-    */
     
-    
-    val fps = 24 
+    val fps = 24 * 3
     
     // 5.96e8  --- 2
     // 2.29e12 --- 0.030
     
-    val d:Double = 10e8  //m
+    val d:Double = 1.5e11  //m
     val f:Double = 2.0    //m
     
     /*
@@ -154,20 +131,22 @@ object SimulatorApp extends SimpleSwingApplication  {
       new geometry.Vector(0,1,0)
     )
     
-    val angle = (math.Pi * 2.0) / 90.0
+    val angle = (math.Pi * 2.0) / 1000
     def onKeyPress(keyCode: Value) = keyCode match {
       case Key.Plus    => camera.zoomIn
       case Key.Minus   => camera.zoomOut
-      case Key.Up      => camera.rotateTo(angle, 0, 0)
-      case Key.Down    => camera.rotateTo(-angle, 0, 0)
-      case Key.Left    => camera.rotateTo(0, angle, 0)
-      case Key.Right   => camera.rotateTo(0, -angle, 0)
-      case Key.Period  => camera.rotateTo(0, 0, angle)
-      case Key.Comma   => camera.rotateTo(0, 0, -angle) 
+      case Key.Up      => camera.rotateBy(angle, 0, 0)
+      case Key.Down    => camera.rotateBy(-angle, 0, 0)
+      case Key.Left    => camera.rotateBy(0, angle, 0)
+      case Key.Right   => camera.rotateBy(0, -angle, 0)
+      case Key.Period  => camera.rotateBy(0, 0, angle)
+      case Key.Comma   => camera.rotateBy(0, 0, -angle) 
+      case Key.Space   => togglePause 
+      case Key.R   => restart 
       case _ => // do nothing
     }
     
-    camera.rotateTo(0, 0, 0)
+    camera.rotateBy(0, 0, 0)
     
     //Test
     val pauseButton = new Button("Pause")
@@ -218,7 +197,11 @@ object SimulatorApp extends SimpleSwingApplication  {
           
       }
         contents += new Menu("Simulation") {
-          contents += new MenuItem( "Manage bodies" )
+          contents += new MenuItem( "Manage bodies" ){
+            reactions += {
+              case clickEvent: ButtonClicked => manageBodies()
+            }
+          }
       }
         contents += new Menu("Display") {
           contents += new MenuItem( "Properties..." )
@@ -232,9 +215,9 @@ object SimulatorApp extends SimpleSwingApplication  {
           contents += new MenuItem( "Instructions..." )
           contents += new MenuItem( "About Solar System" )
           contents += new MenuItem("test")
-          
-          
       }
+      
+      
     }
     
     
@@ -261,6 +244,126 @@ object SimulatorApp extends SimpleSwingApplication  {
       }
     }
     
+    
+
+    
+    def manageBodies(){
+      val bodiesWindow = new scala.swing.Dialog(){
+        title = "bodies"
+        contents = new scala.swing.FlowPanel{
+          
+          val str_bodies = system.bodies.map(b => (b.getName, b))
+          
+          
+          val lw =  new scala.swing.ListView(str_bodies.map(b => b._1))
+          
+          val tw_name = new TextField()
+          val tw_mass = new TextArea()
+          
+          //Location
+          val lb_x = new Label("Location X")
+          val lb_y = new Label("Location Y")
+          val lb_z = new Label("Location Z")
+          
+          val tw_x = new TextField
+          val tw_y = new TextField
+          val tw_z = new TextField
+          
+          //Velocity
+          val lb_vel_x = new Label("Velocity X")
+          val lb_vel_y = new Label("Velocity Y")
+          val lb_vel_z = new Label("Velocity Z")
+          
+          val tw_vel_x = new TextField
+          val tw_vel_y = new TextField
+          val tw_vel_z = new TextField
+          
+          //Control buttons
+          val btn_save = new Button("Save"){
+            reactions += {
+              case action: ButtonClicked => {
+                selection.setMass(tw_mass.text.toDouble)
+                println("updated")
+              }
+              
+            }            
+          }
+          
+          val btn_remove = new Button("Remove"){
+            reactions += {
+              case action: ButtonClicked => {
+                println("hej")
+                system.remove(selection)
+              }
+              
+            }
+          }
+          
+          listenTo(btn_save)
+          
+          var selection:Body = system.bodies(0)
+          
+          listenTo(lw.selection)
+          
+          
+          reactions += {
+            case SelectionChanged(`lw`) => {
+              selection = str_bodies.filter(_._1 == lw.selection.items(0)).head._2
+              tw_name.text = lw.selection.items(0)
+              tw_mass.text = selection.getMass + " kg"
+              
+              tw_x.text = selection.location.x + ""
+              tw_y.text = selection.location.y + ""
+              tw_z.text = selection.location.z + ""
+              
+              tw_vel_x.text = selection.velocity.x + ""
+              tw_vel_y.text = selection.velocity.y + ""
+              tw_vel_z.text = selection.velocity.z + ""
+              
+            }
+            
+          }
+          
+          val bp = new BoxPanel(Orientation.Vertical){
+            contents += new Label("Name")
+            contents += tw_name
+            contents += new Label("Mass")
+            contents += tw_mass
+            
+            //Location
+            contents += lb_x
+            contents += tw_x
+            contents += lb_y
+            contents += tw_y
+            contents += lb_z
+            contents += tw_z
+            
+            //Velocity
+            contents += lb_vel_x
+            contents += tw_vel_x
+            contents += lb_vel_y 
+            contents += tw_vel_y
+            contents += lb_vel_z
+            contents += tw_vel_z
+            
+            
+            //Controll buttons
+            contents += btn_save
+            contents += btn_remove
+          }
+          
+          
+          contents += lw
+          contents += bp
+          
+        }
+        
+      }
+      
+      
+      bodiesWindow.open()
+    }
+    
     def test = {
       newSystem.open()
       newSystem.background = Color.RED
@@ -285,14 +388,176 @@ object SimulatorApp extends SimpleSwingApplication  {
     }
     
     
-    
-    val rightpanel = new scala.swing.FlowPanel(){
+    val rightpanel = new scala.swing.TabbedPane(){
       preferredSize = new Dimension(300, 1000)
       background = Color.LIGHT_GRAY
-      contents += new Label("hej")
-      contents += new TextField("hej")
     }
     
+       
+    
+    rightpanel.pages.addOne(new TabbedPane.Page("Bodies", new BoxPanel(Orientation.Vertical){
+      val str_bodies = system.bodies.map(b => (b.getName, b))
+      
+      val lw =  new scala.swing.ListView(str_bodies.map(b => b._1))
+      
+      
+      val tw_name = new TextField()
+      val tw_mass = new TextField()
+          
+      //Location
+      val lb_x = new Label("Location X")
+          val lb_y = new Label("Location Y")
+          val lb_z = new Label("Location Z")
+          
+          val tw_x = new TextField
+          val tw_y = new TextField
+          val tw_z = new TextField
+          
+          //Velocity
+          val lb_vel_x = new Label("Velocity X")
+          val lb_vel_y = new Label("Velocity Y")
+          val lb_vel_z = new Label("Velocity Z")
+          
+          val tw_vel_x = new TextField
+          val tw_vel_y = new TextField
+          val tw_vel_z = new TextField
+          
+          //Control buttons
+          val btn_save = new Button("Save"){
+            reactions += {
+              case action: ButtonClicked => {
+                selection.setMass(tw_mass.text.toDouble)
+                println("updated")
+              }
+              
+            }            
+          }
+          val btn_remove = new Button("Remove"){
+            reactions += {
+              case action: ButtonClicked => {
+                system.remove(selection)
+              }
+              
+            }
+          }
+          
+          var selection:Body = system.bodies(0)
+          
+          listenTo(lw.selection)
+          
+          
+          reactions += {
+            case SelectionChanged(`lw`) => {
+              selection = str_bodies.filter(_._1 == lw.selection.items(0)).head._2
+              tw_name.text = lw.selection.items(0)
+              tw_mass.text = selection.getMass.toString()
+              
+              tw_x.text = selection.location.x + ""
+              tw_y.text = selection.location.y + ""
+              tw_z.text = selection.location.z + ""
+              
+              tw_vel_x.text = selection.velocity.x + ""
+              tw_vel_y.text = selection.velocity.y + ""
+              tw_vel_z.text = selection.velocity.z + ""
+              
+            }
+          }
+          
+          val bp = new BoxPanel(Orientation.Vertical){
+            contents += tw_name
+            contents += tw_mass
+            
+            //Location
+            contents += lb_x
+            contents += tw_x
+            contents += lb_y
+            contents += tw_y
+            contents += lb_z
+            contents += tw_z
+            
+            //Velocity
+            contents += lb_vel_x
+            contents += tw_vel_x
+            contents += lb_vel_y 
+            contents += tw_vel_y
+            contents += lb_vel_z
+            contents += tw_vel_z
+            
+            
+            //Control buttons
+            contents += btn_save
+            contents += btn_remove
+            
+
+            for(i <- contents){
+              val dim = i.preferredSize
+              dim.width = i.maximumSize.width
+              i.maximumSize = dim
+              
+            }
+            
+          }
+          lw.selectIndices(0)
+          lw.fixedCellWidth = 300
+          
+          
+          contents += lw
+          contents += bp
+          
+
+      
+      
+    }))
+    
+    
+    rightpanel.pages.addOne(new TabbedPane.Page("Camera settings", new ScrollPane(){
+      val rotX = new TextField(camera.rotationX + "")
+      val rotY = new TextField(camera.rotationY + "")
+      val rotZ = new TextField(camera.rotationZ + "")
+      val fLen = new TextField(camera.fLen2 + "")
+      val dis = new TextField(camera.plane.D + "")
+      
+      contents = new BoxPanel(Orientation.Vertical){
+          contents += new Label("Distance: ")
+          contents += dis
+          
+          contents += new Label("Focal length")
+          contents += fLen
+          
+          contents += new Label("Rotation X: ")
+          contents += rotX
+          
+          contents += new Label("Rotation Y: ")
+          contents += rotY
+          
+          contents += new Label("Rotation Z: ")
+          contents += rotZ
+          
+          contents += new Button("Update"){
+            reactions += {
+              case action: ButtonClicked => {
+                camera.rotateTo(rotX.text.toDouble/360*(math.Pi*2), rotY.text.toDouble/360*(math.Pi*2), rotZ.text.toDouble/360*(math.Pi*2/360))
+                camera.setFocalLength(fLen.text.toDouble)
+                camera.plane.D = dis.text.toDouble
+              }
+            }
+          }
+          
+          for(i <- contents){
+            val dim = i.preferredSize
+            dim.width = i.maximumSize.width
+            i.maximumSize = dim
+            
+          }
+          
+        }
+    }))
+    
+    
+    rightpanel.pages.addOne(new TabbedPane.Page("Simulation", new BoxPanel(Orientation.Horizontal)))
+    
+    
+        
     val midPanel = new FlowPanel()
     midPanel.contents += mainPanel
     midPanel.contents += rightpanel
@@ -315,18 +580,23 @@ object SimulatorApp extends SimpleSwingApplication  {
     
     
     pauseButton.reactions += {
-      case clickEvent: ButtonClicked =>{
-        isPaused = !isPaused
-        pauseButton.text = isPaused match{
-          case true => "Play"
-          case false => "Pause"
-        }
-      }
+      case clickEvent: ButtonClicked =>togglePause
     }
 
   var x = 0
   
-  var isPaused = false
+  
+  
+  private var isPaused = false
+  
+  def togglePause = {
+    isPaused = !isPaused
+    pauseButton.text = isPaused match{
+      case true => "Play"
+      case false => "Pause"
+    }
+  }
+  
   
   def mainPanel = new Panel {
     preferredSize = new Dimension( winSize._1, winSize._2 )
@@ -338,7 +608,6 @@ object SimulatorApp extends SimpleSwingApplication  {
     }
     
     
-    val bg = new ImageIcon("milkyway.jpg")
     override def paint(g: Graphics2D) {
       //printOutput()
       
@@ -367,6 +636,7 @@ object SimulatorApp extends SimpleSwingApplication  {
       
       g.drawString(output, winSize._1 - back - 8, winSize._2 - 10)
       
+      g.drawString(camera.focalLength + "f", winSize._1 - back - 8, winSize._2 - txtHeight *6)
       g.drawString(rotX, winSize._1 - back - 8, winSize._2 - txtHeight *5)
       g.drawString(rotY, winSize._1 - back - 8, winSize._2 - txtHeight *4)
       g.drawString(rotZ, winSize._1 - back - 8, winSize._2 - txtHeight * 3)

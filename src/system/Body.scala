@@ -4,7 +4,7 @@ package system
 import geometry.Vector
 import java.awt.Color
 
-sealed abstract class Body(name:String, mass:Double, radius:Double, val location:Vector, val velocity:Vector, system:System) {
+sealed abstract class Body(name:String, var mass:Double, radius:Double, val location:Vector, val velocity:Vector, system:System) {
   
   
   var nextloc = new Vector(0,0,0)
@@ -98,8 +98,10 @@ sealed abstract class Body(name:String, mass:Double, radius:Double, val location
   def getLocation = location
   def getName = name
   
-  //var acceleration:Vector = new Vector(0,0,0)
- 
+  
+  def setMass(m:Double) = {
+    mass = m
+  }
   
 
     /** Find the net acceleration recieved by a system at a given location. 

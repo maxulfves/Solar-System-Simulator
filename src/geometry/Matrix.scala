@@ -189,7 +189,9 @@ class Matrix( input: Array[Array[Double]] ) {
     x
   }
 
-  
+  def set(x:Int, y:Int, value:Double) = {
+    seq(y)(x) = value
+  }
   
   def gaussJordan:Seq[Double] = {
     require(width > 1, "Width too small")
