@@ -16,13 +16,6 @@ import java.awt.Shape
  */
 class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
   
-  
-  //def focalLength = plane.distanceTo(focalPoint)
-  //focalLength = 0.050
-  
-  def focalLength = plane.distanceTo(focalPoint)
-  
-  
   val radiusScale:Double = 2 << 3
   val radiusConstant:Double = 2.0 //px
   val imgRes:(Double, Double) = (1000, 1000 ) //px
@@ -45,14 +38,10 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
   
   private val closestPointOnPlane = plane.closestPointTo(focalPoint)
   
-  
-  
   val origo2D:Point = plane.closestPointTo(focalPoint)
   
-  
-  var fLen2 = focalLength
-  def fPoint = origo2D + plane.normal * fLen2
-  
+  var fLen2 = (focalRange._1 + focalRange._2) / 2
+  def fPoint = origo2D + (plane.normal * fLen2)
   
   //These vectors describe the direction and magnitude of a pixel.
   val yVect = vectorUp.unit 
@@ -65,7 +54,6 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     origo2D - ((xVect * imgRes._1) + (yVect * imgRes._2))  / 2,
     origo2D - ((xVect * imgRes._1) - (yVect * imgRes._2))  / 2
   )
-  
   
   object original {
     val _origo2D:Point = new Point(origo2D.x, origo2D.y, origo2D.z)
@@ -119,7 +107,7 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     val d = - ((normal.x * origo2D.x) + (normal.y * origo2D.y) + (normal.z * origo2D.z) )
     
     //Rotate focalpoint
-    focalPoint.set(origo2D - (normal * fLen2) )
+    focalPoint = fPoint
     
     
     xVect.set(original._xVect.crossP(rm).unit )
@@ -139,26 +127,26 @@ class Camera(val plane:Plane, var focalPoint:Point, val vectorUp:Vector) {
     val newFocalLength:Double = fLen2 + zoomStep
     
     if(newFocalLength < focalRange._2){
-      focalPoint -= (plane.normal.unit * zoomStep)
       fLen2 += zoomStep
+      focalPoint = fPoint
     }else{
-      focalPoint.set(closestPointOnPlane - (plane.normal.unit * focalRange._2) )
       fLen2 = focalRange._2
-    } 
-  }   
+      focalPoint = fPoint
+    }
+  }
   
   
   /** Zooms out by moving the focalpoint closer to the plane in the direction of the normal vector. //TODO
    */
   def zoomOut = {
-    val newFocalLength:Double = focalLength - zoomStep
+    val newFocalLength:Double = fLen2 - zoomStep
     
     if(newFocalLength > focalRange._1 ){
-      focalPoint += (plane.normal.unit * zoomStep)
       fLen2 -= zoomStep
+      focalPoint = fPoint
     }else{
-      focalPoint.set(closestPointOnPlane - (plane.normal.unit * focalRange._1) )
       fLen2 = focalRange._1
+      focalPoint = fPoint
     }
   }
   

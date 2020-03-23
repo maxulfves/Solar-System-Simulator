@@ -132,22 +132,11 @@ sealed abstract class Body(name:String, var mass:Double, radius:Double, val loca
   
   def copy(system:System):Body
   
-  def getColor(): Color = {
-    
-    name match{
-      case "sun" => Color.YELLOW
-      case "earth" => Color.GREEN
-      case "mars" => Color.RED
-      case "mercury" => Color.RED
-      case "venus" => Color.LIGHT_GRAY
-      case "jupiter" => new Color(100, 255,0)
-      case "saturn" => new Color(100, 100, 0)
-      case "neptune" => new Color(0,0,100)
-      case "uranus" => new Color(100, 100, 200)
-      case _ => Color.WHITE
-    }
-    
+  private var color = Color.WHITE
+  def setColor(other:Color) {
+    color = other
   }
+  def getColor(): Color = color
 
   
   
@@ -167,12 +156,20 @@ sealed abstract class Body(name:String, var mass:Double, radius:Double, val loca
 class Planet(name:String, mass:Double, radius:Double, loc:Vector, velocity:Vector, system:System) extends Body(name, mass, radius, loc, velocity, system){
   override def toString = "Planet " + name+ " at " + location.toString() + " moving at " + velocity.toString()
     
-  override def copy(system:System):Planet = new Planet(this.name, this.mass, this.radius, this.loc.copy, this.velocity.copy, system)
+  override def copy(system:System):Planet = {
+    val ret = new Planet(this.name, this.mass, this.radius, this.loc.copy, this.velocity.copy, system)
+    ret.setColor(getColor) 
+    ret
+  }
 }
 
 class Star(name:String, mass:Double, radius:Double, loc:Vector, velocity:Vector, system:System) extends Body(name, mass, radius, loc, velocity, system){
   override def toString = "Star " + name+ " at " + location.toString() + " moving at " + velocity.toString()
-  def copy(system:System):Star = new Star(this.name, this.mass, this.radius, this.loc.copy, this.velocity.copy, system)
+  def copy(system:System):Star = {
+    val ret = new Star(this.name, this.mass, this.radius, this.loc.copy, this.velocity.copy, system)
+    ret.setColor(getColor)
+    ret
+  }
 }
 
 class Satelite(name:String, mass:Double, radius:Double, loc:Vector, velocity:Vector, system:System, icon: Int) extends Body(name, mass, radius, loc, velocity, system){

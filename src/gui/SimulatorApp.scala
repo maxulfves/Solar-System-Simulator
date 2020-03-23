@@ -20,6 +20,13 @@ import java.awt.{Dimension, Graphics2D, Graphics, Image, Rectangle}
 import java.awt.{Color => AWTColor}
 import javax.swing.JList
 import scala.collection.mutable.Buffer
+import files.Serializer
+import java.io.File
+import java.io.FileFilter
+import java.io.FilenameFilter
+import javax.swing.filechooser.FileNameExtensionFilter
+import java.awt.GraphicsConfiguration
+import java.util.Calendar
        
 
 /*
@@ -27,101 +34,23 @@ import scala.collection.mutable.Buffer
  * 
  */
 object SimulatorApp extends SimpleSwingApplication  {
-  
-       
+    var openedFile = new File(Constants.exampleSource)
+    var isExample = true
     
-    val winSize = (1000, 1000)
+    
+    val winSize = (1000, 900)
     
     val day = geometry.Constants.dt
-    
-    val system:System = new System()
-    
-    val sun = new Star(
-        "sun", 
-        1.989e30, //Mass
-        696340e3, //Radius
-        new Vector(0, 0, 0),  //Position
-        new Vector(0.001, 12.27, 0.001),  //Velocity
-        system)
-    
-    val earth = new Planet(
-      "earth", 
-      5.972e24, 
-      6371e3,
-      new Vector(1.49598e11, 0, 0.01), 
-      new Vector(0, 29.78e3, 0.0), 
-      system)
-    
-    
-    val mars = new Planet(
-      "mars", 
-      6.39e23, 
-      3389.5e3,
-      new Vector(2.27987e11, 0, 0), 
-      new Vector(0, 24.1e3, 0), 
-      system)
-      
-    
-    val mercury = new Planet(
-      "mercury", 
-      3.285e23, 
-      2439.7e3,
-      new Vector(5.834e10, 0, 0), 
-      new Vector(0, 48e3, 0), 
-      system)
-  
-    val venus = new Planet(
-      "venus", 
-      4.867e24, 
-      6051.8e3,
-      new Vector(1.0815e11, 0, 0), 
-      new Vector(0, 35.0e3, 0), 
-      system)
-    
-    val jupiter = new Planet(
-      "jupiter",
-      1898.19e24 ,
-      69911e3,
-      new Vector(-7.7925e11,0,0),
-      new Vector(0,-13.06e3,0),
-      system)
-    
-    val saturn = new Planet(
-      "saturn",
-      5.68e26 ,
-      58232e3,
-      new Vector(14.972e11, 0, 0),
-      new Vector(0,9.68e3,0),
-      system)
-    
-    system.addBody(sun)
-    
-    system.addBody(earth)
-    system.addBody(mars)
-    system.addBody(mercury)
-    system.addBody(venus)
-    system.addBody(jupiter)
-    system.addBody(saturn)
-    
+        
+    val mySerializer = new files.Serializer()
+    var system = mySerializer.deserialize(openedFile)
     val initial = system.copy
     
     
-    val fps = 24 * 3
-    
-    // 5.96e8  --- 2
-    // 2.29e12 --- 0.030
-    
+    val fps = Constants.fps
+    //TODO make nicer
     val d:Double = 1.5e11  //m
-    val f:Double = 2.0    //m
-    
-    /*
-    val camera = new Camera(
-      new Plane(0,0,-1.0,d),
-      new geometry.Point(0, 0, (d + f) ),
-      new geometry.Vector(0,-1,0)
-    )*/
-    
-    //println("-----")
+    val f:Double = 2.0     //m
     
     val plane = new Plane(-math.sqrt(2), 0, -math.sqrt(2), d * 2 )
     
@@ -132,6 +61,7 @@ object SimulatorApp extends SimpleSwingApplication  {
     )
     
     val angle = (math.Pi * 2.0) / 1000
+    
     def onKeyPress(keyCode: Value) = keyCode match {
       case Key.Plus    => camera.zoomIn
       case Key.Minus   => camera.zoomOut
@@ -147,6 +77,8 @@ object SimulatorApp extends SimpleSwingApplication  {
     }
     
     camera.rotateBy(0, 0, 0)
+    
+    
     
     //Test
     val pauseButton = new Button("Pause")
@@ -172,7 +104,7 @@ object SimulatorApp extends SimpleSwingApplication  {
           contents += new MenuItem( "New..." ){
             reactions += {
               case clickEvent: ButtonClicked =>{
-                test
+                openNewSystemDialog
               }
             }
           }
@@ -185,8 +117,28 @@ object SimulatorApp extends SimpleSwingApplication  {
             }
           }
           
-          contents += new MenuItem( "Save" )
-          contents += new MenuItem( "Save as..." )
+          contents += new MenuItem( "Save" ){
+            reactions += {
+              case clickEvent: ButtonClicked =>{
+                if(!isExample){
+                  save
+                }else{
+                  //TODO alert
+                  Dialog.showMessage(this, "You shouldn't overwrite an example file! \nTry \"Save as...\" instead. ", "Warning!", Dialog.Message.Warning)
+                }
+              }
+            }
+          }
+          
+          contents += new MenuItem( "Save as..." ){
+            reactions += {
+              case clickEvent: ButtonClicked =>{
+                saveAs
+              }
+            }
+          }
+          
+          
           contents += new MenuItem( "Exit" ){
             reactions += {
               case clickEvent: ButtonClicked =>{
@@ -196,25 +148,21 @@ object SimulatorApp extends SimpleSwingApplication  {
           }
           
       }
-        contents += new Menu("Simulation") {
-          contents += new MenuItem( "Manage bodies" ){
-            reactions += {
-              case clickEvent: ButtonClicked => manageBodies()
-            }
-          }
+      contents += new Menu("Simulation")
+        
+      contents += new Menu("Display") {
+        contents += new MenuItem( "Properties..." )
+        contents += new MenuItem( "Camera settings... " )
+        contents += new MenuItem( "Toggle vectors" )
       }
-        contents += new Menu("Display") {
-          contents += new MenuItem( "Properties..." )
-          contents += new MenuItem( "Camera settings... " )
-          contents += new MenuItem( "Toggle vectors" )
+      contents += new Menu("Window") {
+        contents += new MenuItem( "Show view..." )
       }
-        contents += new Menu("Window") {
-          contents += new MenuItem( "Show view..." )
-      }
-        contents += new Menu("Help") {
-          contents += new MenuItem( "Instructions..." )
-          contents += new MenuItem( "About Solar System" )
-          contents += new MenuItem("test")
+      
+      contents += new Menu("Help") {
+        contents += new MenuItem( "Instructions..." )
+        contents += new MenuItem( "About Solar System" )
+        contents += new MenuItem("test")
       }
       
       
@@ -222,7 +170,7 @@ object SimulatorApp extends SimpleSwingApplication  {
     
     
     
-    val newSystem = new Dialog(){
+    val newSystem:Dialog = new Dialog(){
       title = "Create a new simulation"
       //preferredSize = new Dimension(400, 400)
       
@@ -230,150 +178,62 @@ object SimulatorApp extends SimpleSwingApplication  {
         
         contents += new scala.swing.Label("Name")
         
-        val bob = new scala.swing.PasswordField
-        bob.maximumSize = new Dimension(200, 20)
-        contents += bob
-        contents += new scala.swing.Label("Start year")
-        contents += new scala.swing.ComboBox(Seq.tabulate(2050)(_ + 1).drop(1969))
-        contents += new scala.swing.Label("Start month")
-        contents += new scala.swing.ComboBox(Seq.tabulate(12)(_ + 1).drop(0))
-        contents += new scala.swing.Label("Start date")
-        contents += new scala.swing.ComboBox(Seq.tabulate(31)(_ + 1).drop(0))
+        val nameInput = new scala.swing.TextField
+        val yearDropdown = new scala.swing.ComboBox(Seq.tabulate(2050)(_ + 1).drop(1969).map(_.toString()))
+        val monthDropdown = new scala.swing.ComboBox(Seq.tabulate(12)(_ + 1).drop(0))
+        val dayDropdown = new scala.swing.ComboBox(Seq.tabulate(31)(_ + 1).drop(0))
         
-        contents += new scala.swing.Label("Name")
+        val createNewButton = new Button("Create!"){
+          reactions += {
+            case action: ButtonClicked => {
+              val createdSystem = new System(nameInput.text)
+              //TODO Is name legit?
+              val date = Calendar.getInstance
+              
+              println(yearDropdown.selection.item + "")
+              date.set(Calendar.YEAR,           yearDropdown.selection.item.toInt)
+              date.set(Calendar.MONTH,          monthDropdown.selection.item.toInt)
+              date.set(Calendar.DAY_OF_MONTH,   dayDropdown.selection.item.toInt)
+              
+              createdSystem.setTime(date.getTimeInMillis)
+              
+              system = createdSystem
+              
+              newSystem.close()
+              println("created!")
+            }
+            
+          } 
+        }
+        nameInput.maximumSize = new Dimension(200, 20)
+        contents += nameInput
+        contents += new scala.swing.Label("Start year")
+        contents += yearDropdown
+        contents += new scala.swing.Label("Start month")
+        contents += monthDropdown
+        contents += new scala.swing.Label("Start date")
+        contents += dayDropdown
+        contents += createNewButton
+        
       }
     }
     
     
 
+
     
-    def manageBodies(){
-      val bodiesWindow = new scala.swing.Dialog(){
-        title = "bodies"
-        contents = new scala.swing.FlowPanel{
-          
-          val str_bodies = system.bodies.map(b => (b.getName, b))
-          
-          
-          val lw =  new scala.swing.ListView(str_bodies.map(b => b._1))
-          
-          val tw_name = new TextField()
-          val tw_mass = new TextArea()
-          
-          //Location
-          val lb_x = new Label("Location X")
-          val lb_y = new Label("Location Y")
-          val lb_z = new Label("Location Z")
-          
-          val tw_x = new TextField
-          val tw_y = new TextField
-          val tw_z = new TextField
-          
-          //Velocity
-          val lb_vel_x = new Label("Velocity X")
-          val lb_vel_y = new Label("Velocity Y")
-          val lb_vel_z = new Label("Velocity Z")
-          
-          val tw_vel_x = new TextField
-          val tw_vel_y = new TextField
-          val tw_vel_z = new TextField
-          
-          //Control buttons
-          val btn_save = new Button("Save"){
-            reactions += {
-              case action: ButtonClicked => {
-                selection.setMass(tw_mass.text.toDouble)
-                println("updated")
-              }
-              
-            }            
-          }
-          
-          val btn_remove = new Button("Remove"){
-            reactions += {
-              case action: ButtonClicked => {
-                println("hej")
-                system.remove(selection)
-              }
-              
-            }
-          }
-          
-          listenTo(btn_save)
-          
-          var selection:Body = system.bodies(0)
-          
-          listenTo(lw.selection)
-          
-          
-          reactions += {
-            case SelectionChanged(`lw`) => {
-              selection = str_bodies.filter(_._1 == lw.selection.items(0)).head._2
-              tw_name.text = lw.selection.items(0)
-              tw_mass.text = selection.getMass + " kg"
-              
-              tw_x.text = selection.location.x + ""
-              tw_y.text = selection.location.y + ""
-              tw_z.text = selection.location.z + ""
-              
-              tw_vel_x.text = selection.velocity.x + ""
-              tw_vel_y.text = selection.velocity.y + ""
-              tw_vel_z.text = selection.velocity.z + ""
-              
-            }
-            
-          }
-          
-          val bp = new BoxPanel(Orientation.Vertical){
-            contents += new Label("Name")
-            contents += tw_name
-            contents += new Label("Mass")
-            contents += tw_mass
-            
-            //Location
-            contents += lb_x
-            contents += tw_x
-            contents += lb_y
-            contents += tw_y
-            contents += lb_z
-            contents += tw_z
-            
-            //Velocity
-            contents += lb_vel_x
-            contents += tw_vel_x
-            contents += lb_vel_y 
-            contents += tw_vel_y
-            contents += lb_vel_z
-            contents += tw_vel_z
-            
-            
-            //Controll buttons
-            contents += btn_save
-            contents += btn_remove
-          }
-          
-          
-          contents += lw
-          contents += bp
-          
-        }
-        
-      }
-      
-      
-      bodiesWindow.open()
-    }
-    
-    def test = {
+    def openNewSystemDialog = {
       newSystem.open()
       newSystem.background = Color.RED
       newSystem.centerOnScreen()
       newSystem.visible = true
+      
+      
     }
     
     def restart = {
       println("restarted")
-      system.set(initial)
+      system.set(initial.copy)
     }
       
     def exit = {
@@ -381,25 +241,75 @@ object SimulatorApp extends SimpleSwingApplication  {
       System.exit(1)
     }
     
+    def save = mySerializer.serialize(system, openedFile)
+    
     def load = {
-      //TODO Do something
-      val bob  = new scala.swing.FileChooser
-      val mike = bob.showOpenDialog(mainPanel);
+      val fileDialog  = new scala.swing.FileChooser( new File(Constants.simulationFileDirectory) )
+      fileDialog.title = "Load a system"
+      fileDialog.fileFilter = new FileNameExtensionFilter("Solarsystem state (.%s)".format(Constants.extension), Constants.extension)
+      fileDialog.multiSelectionEnabled = false
+      fileDialog.controlButtonsAreShown = true
+      fileDialog.fileHidingEnabled = false
+      
+      val selection = fileDialog.showOpenDialog(mainPanel);
+      if (selection == FileChooser.Result.Approve) {
+        val fileToLoad:File = fileDialog.selectedFile
+        println("Load file: " + fileToLoad.getAbsolutePath());
+        
+        isExample = fileToLoad.getParent.equals(new File(Constants.exampleDirectory).getAbsolutePath)
+        
+        println(isExample)
+        
+        system = (mySerializer.deserialize(fileToLoad))
+        initial.set(system.copy)
+        
+        openedFile = fileToLoad
+        
+        //TODO Alert if operation failed.
+        //TODO Check if file is legit
+        //TODO 
+      }
+      
+      
+    }
+    
+    
+    
+    def saveAs = {
+      val fileDialog  = new scala.swing.FileChooser(new File(Constants.simulationFileDirectory) )
+      
+      fileDialog.title = "Save as..." 
+      fileDialog.fileFilter = new FileNameExtensionFilter("Solarsystem state (.%s)".format(Constants.extension), Constants.extension)
+      fileDialog.multiSelectionEnabled = false
+      fileDialog.controlButtonsAreShown = true
+      fileDialog.fileHidingEnabled = false
+      
+      val defaultName = system.name + "_" + system.getDate.replace(' ', '_') + "." + Constants.extension
+      
+      fileDialog.selectedFile = new File( defaultName )
+      
+      val selection = fileDialog.showSaveDialog(mainPanel);
+      
+      
+      if (selection == FileChooser.Result.Approve) {
+        val fileToSave:File = fileDialog.selectedFile
+        println("Save as file: " + fileToSave.getAbsolutePath());
+        mySerializer.serialize(system, fileToSave)
+        //TODO Alert if operation failed.
+      }
     }
     
     
     val rightpanel = new scala.swing.TabbedPane(){
-      preferredSize = new Dimension(300, 1000)
+      preferredSize = new Dimension(300, winSize._2)
       background = Color.LIGHT_GRAY
     }
     
-       
-    
+ 
     rightpanel.pages.addOne(new TabbedPane.Page("Bodies", new BoxPanel(Orientation.Vertical){
-      val str_bodies = system.bodies.map(b => (b.getName, b))
       
-      val lw =  new scala.swing.ListView(str_bodies.map(b => b._1))
-      
+      val lw =  new scala.swing.ListView(system.bodies.map(_.getName))
+      lw.listData = lw.listData
       
       val tw_name = new TextField()
       val tw_mass = new TextField()
@@ -435,9 +345,29 @@ object SimulatorApp extends SimpleSwingApplication  {
           val btn_remove = new Button("Remove"){
             reactions += {
               case action: ButtonClicked => {
+                              
                 system.remove(selection)
+                lw.listData = system.bodies.map(_.getName)
+                
+                
               }
               
+            }
+          }
+          
+          val btn_newBody = new Button("New body..."){
+            reactions += {
+              case action: ButtonClicked => {
+                
+                val name = Dialog.showInput(contents.head, "New label text", initial="new Body").getOrElse("Unnamed")
+                val body = new Planet(name, 0, 0, new Vector(0, 0, 0), new Vector(0, 0, 0), system)
+                system.addBody(body)
+                
+                
+                lw.listData = system.bodies.map(b=> b.getName)
+                
+                
+              }
             }
           }
           
@@ -448,18 +378,25 @@ object SimulatorApp extends SimpleSwingApplication  {
           
           reactions += {
             case SelectionChanged(`lw`) => {
-              selection = str_bodies.filter(_._1 == lw.selection.items(0)).head._2
-              tw_name.text = lw.selection.items(0)
-              tw_mass.text = selection.getMass.toString()
-              
-              tw_x.text = selection.location.x + ""
-              tw_y.text = selection.location.y + ""
-              tw_z.text = selection.location.z + ""
-              
-              tw_vel_x.text = selection.velocity.x + ""
-              tw_vel_y.text = selection.velocity.y + ""
-              tw_vel_z.text = selection.velocity.z + ""
-              
+              if(lw.selection.items.size != 0){
+
+                selection = system.bodies.filter( _.getName == lw.selection.items(0)).head
+                
+                tw_name.text = lw.selection.items(0)
+                tw_mass.text = selection.getMass.toString()
+                
+                tw_x.text = selection.location.x + ""
+                tw_y.text = selection.location.y + ""
+                tw_z.text = selection.location.z + ""
+                
+                tw_vel_x.text = selection.velocity.x + ""
+                tw_vel_y.text = selection.velocity.y + ""
+                tw_vel_z.text = selection.velocity.z + ""
+              }else{
+                if(lw.listData.size != 0 ){
+                  lw.selectIndices(0)
+                }
+              }
             }
           }
           
@@ -487,6 +424,7 @@ object SimulatorApp extends SimpleSwingApplication  {
             //Control buttons
             contents += btn_save
             contents += btn_remove
+            contents += btn_newBody
             
 
             for(i <- contents){
@@ -536,7 +474,11 @@ object SimulatorApp extends SimpleSwingApplication  {
           contents += new Button("Update"){
             reactions += {
               case action: ButtonClicked => {
-                camera.rotateTo(rotX.text.toDouble/360*(math.Pi*2), rotY.text.toDouble/360*(math.Pi*2), rotZ.text.toDouble/360*(math.Pi*2/360))
+                camera.rotateTo(
+                    rotX.text.toDouble/360*(math.Pi*2), 
+                    rotY.text.toDouble/360*(math.Pi*2), 
+                    rotZ.text.toDouble/360*(math.Pi*2))
+                    
                 camera.setFocalLength(fLen.text.toDouble)
                 camera.plane.D = dis.text.toDouble
               }
@@ -636,7 +578,7 @@ object SimulatorApp extends SimpleSwingApplication  {
       
       g.drawString(output, winSize._1 - back - 8, winSize._2 - 10)
       
-      g.drawString(camera.focalLength + "f", winSize._1 - back - 8, winSize._2 - txtHeight *6)
+      g.drawString(camera.fLen2 + "f", winSize._1 - back - 8, winSize._2 - txtHeight *6)
       g.drawString(rotX, winSize._1 - back - 8, winSize._2 - txtHeight *5)
       g.drawString(rotY, winSize._1 - back - 8, winSize._2 - txtHeight *4)
       g.drawString(rotZ, winSize._1 - back - 8, winSize._2 - txtHeight * 3)
@@ -646,7 +588,7 @@ object SimulatorApp extends SimpleSwingApplication  {
       
       time += 1
       
-      Thread.sleep(1000/fps)
+      Thread.sleep( (1000.0/fps).toInt )
       repaint()
       revalidate()
       
@@ -657,8 +599,6 @@ object SimulatorApp extends SimpleSwingApplication  {
     
     var time = 0
   }
-  
-  
   
   
   var i = 0

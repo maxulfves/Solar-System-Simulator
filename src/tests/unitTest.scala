@@ -78,7 +78,7 @@ class UnitTests2 {
   
   @Test def cameraTest(){
 
-    val system = new System()
+    val system = new System("test")
     val planet = new Planet("testPlanet", 22, 1, new Vector(0,5500,0), new Vector(0,0,0), system)
     system.addBody(planet)
     
@@ -100,7 +100,7 @@ class UnitTests2 {
   }
 
   @Test def bodyAcc(){
-    val system = new System()
+    val system = new System("test")
     val planet = new Planet("test", 10, 10, new Vector(0,100,0), new Vector(0,0,0), system)
     val star = new Star("t3", 1e14, 10, new Vector(0,0,0), new Vector(0,0,0), system)
     system.addBody(planet)
@@ -116,8 +116,8 @@ class UnitTests2 {
   }
 
   @Test def bodyCopy(){
-    val system = new System
-    val other  = new System
+    val system = new System("test1")
+    val other  = new System("test2")
     val bob = new Planet("bob", 10, 10, new Vector(0,1,2), new Vector(5,6,7), system)
     val mike = bob.copy(other)
     mike.velocity.x = 999

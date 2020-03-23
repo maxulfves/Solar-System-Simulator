@@ -12,13 +12,15 @@ import java.util.Calendar
  * @version 0.1
  * @since 12.02.2020
  */
-class System() {
+class System(var name:String) {
   val bodies = Buffer[Body]()
+  
   
   val date = Calendar.getInstance()
   val months = Array("JANUARY", "FEBRUARY", "MARCH", "APRIL", "MAY", "JUNE", "JULY", "AUGUST", "SEPTEMBER", "OCTOBER", "NOVEMBER", "DECEMBER")
   date.setTimeInMillis(0)
   
+  def getTimeInMs = date.getTimeInMillis
   def getDate:String = date.get(Calendar.YEAR) + " " +  months(date.get(Calendar.MONTH) ).substring(0, 3) + " " + "%02d".format(date.get(Calendar.DAY_OF_MONTH))
   
   /**
@@ -54,10 +56,18 @@ class System() {
     bodies += body
   }
   
+  def getName = this.name
+  def setName(other:String) = {
+    name = other
+  }
+  def setTime(other:Long) = {
+    date.setTimeInMillis(other)
+  }
+  
   def copy:System = {
     //TODO Fyll ut
     
-    val ret = new System
+    val ret = new System(getName)
     //ret.bodies++=this.bodies
     
     for(body <- this.bodies){
@@ -72,6 +82,8 @@ class System() {
   def set(other:System) = {
     //TODO Fyll ut
     this.bodies.clear()
+    
+    println("resetted system")
     
     for(body <- other.bodies){
       addBody(body.copy(this))
