@@ -76,7 +76,7 @@ object SimulatorApp extends SimpleSwingApplication  {
       case _ => // do nothing
     }
     
-    camera.rotateBy(0, 0, 0)
+    camera.rotateBy(1.3962634, 0, 0)
     
     
     
