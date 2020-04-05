@@ -1,3 +1,5 @@
+A program for simulating gravity. 
+
 List of libraries used: 
 Scala Swing
 JUnit 4
