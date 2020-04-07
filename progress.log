@@ -1,0 +1,8 @@
+07.04.2020
+I added a Graph class which can be used to plot different data against each other. Apart from that I have done a few updates and bugfixes to the rest of the project. I’m at a phase where I have all logic working as it should, and now just have to make the gui look pretty and improve the documentation a bit. 
+
+I have mostly done manual testing, but I’m planning to write a few unit tests next to make sure that everything is working as supposed to. 
+
+Nothing too difficult has come up. The program is currently working as it should, except for a few bugs, all stemming from the user interface. 
+
+I might be a little bit behind the original plan, but it was also quite optimistic. I estimate that I have around 2-3 full days of work left to do.
