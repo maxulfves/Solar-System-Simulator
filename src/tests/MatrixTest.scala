@@ -22,15 +22,22 @@ class MatrixTest {
   @Test def gaussJordanWithZeroRow() {
     
     val A = new Matrix(Array(
-          Array(1, 0, 0, 1),
-          Array(0, 1, 0, 1),
-          Array(0, 0, 1, 1),
-          Array(0, 0, 0, 1)
+          Array(2, 1, 0, 1),
+          Array(0, 1, 0, -1),
+          Array(0, 0, 1, 1)
     ))
     
-    println(A.gj2( Array(10, 6, 3, 6) ) ) 
+    A.gaussJordan
     
-    assert(true)
+    println(A)
+    
+    assert(A.getRow(0)(0) == 1)
+    assert(A.getRow(1)(1) == 1)
+    assert(A.getRow(2)(2) == 1)
+    
+    assert(A.getRow(0)(3) == 1)
+    assert(A.getRow(1)(3) == -1)
+    
   }
   
   @Test def rotateX(){

@@ -11,7 +11,7 @@ class Serializer() {
 	//TODO Checksum?
 
 	def deserialize( file: File ): System = {
-		val system = new System( "" )
+		val system = new System("", 0,0)
 
 		val reader = new BufferedReader( new FileReader( file ) )
 
@@ -26,6 +26,8 @@ class Serializer() {
 			deter match {
 				case "N~" => system.setName( value )
 				case "T~" => system.setTime( value.toLong )
+				case "E~" => system.setEnd( value.toLong )
+				case "S~" => system.setStepSize( value.toLong )
 				case "C~" => checksum = value.toInt //TODO checksum
 				case _ => throw new IOException( "Invalid line: " + line )
 			}
@@ -34,7 +36,7 @@ class Serializer() {
 		}
 		line = reader.readLine()
 		while ( line != null ) {
-
+		
 			//println(line)
 			line = line.trim
 			if ( line.trim.charAt( 0 ) == '#' ) {
@@ -78,13 +80,9 @@ class Serializer() {
 					line = reader.readLine()
 				}
 
-				val body = _type match {
-					case "#star" => new Star( name, mass, radius, location, velocity, system )
-					case "#planet" => new Planet( name, mass, radius, location, velocity, system )
-					case _ => throw new IOException( "Invalid line: " + line )
-
-				}
+				val body = new Body( name, mass, radius, location, velocity, system )
 				body.setColor( color )
+				
 				system.addBody( body )
 
 			}
@@ -97,9 +95,13 @@ class Serializer() {
 	def serialize( sys: System, file: File ) {
 		val bw = new BufferedWriter( new FileWriter( file ) )
 
-		bw.write( "N~%s".format( sys.name ) )
+		bw.write( "N~%s".format( sys.getName ) )
 		bw.newLine()
 		bw.write( "T~%s".format( sys.getTimeInMs ) )
+		bw.newLine()
+		bw.write("E~%s".format(sys.getEnd))
+		bw.newLine()
+		bw.write("S~%s".format(sys.getStepSize))
 		bw.newLine()
 		bw.write( "C~%s".format( 0 ) ) //TODO checksum
 		bw.newLine()
@@ -108,13 +110,9 @@ class Serializer() {
 
 		for ( body: Body <- sys.bodies ) {
 
-			val type_ = body match {
-				case s: Star => "star"
-				case s: Planet => "planet"
-				case s: Satelite => //TODO
-			}
+			
 
-			bw.write( "#%s".format( type_ ) )
+			bw.write( "#body" )
 			bw.newLine()
 
 			bw.write( "N|%s".format( body.getName ) )

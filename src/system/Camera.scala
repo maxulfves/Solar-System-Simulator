@@ -8,256 +8,258 @@ import java.awt.geom._
 import java.awt.Shape
 
 /**
- * A camera that captures a system.
+ * A camera that captures an image representation of a system. The camera is always aimed at a fixed point, in this case (0,0,0) and can be rotated around it to view it from multiple angles.
  * 	@param plane The image plane.
  * 	@param focalPoint Focalpoint that is placed behind the plane.
  *  @param vectorUp What direction should be viewed as up on an image?
  */
-class Camera( val plane: Plane, var focalPoint: Point, val vectorUp: Vector ) {
+class Camera() {
 
-	val radiusScale: Double = 2 << 3
-	val radiusConstant: Double = 2.0 //px
-	val imgRes: ( Double, Double ) = ( 1000, 1000 ) //px
-	val focalRange = ( 0.1, 80 ) //in meter
+  private val d: Double = 3e12 //m
+  private val f: Double = 2.0 //m
 
-	private val closestPointOnPlane = plane.closestPointTo( focalPoint )
+  private val plane = new Plane(0, 0, 1, d)
+  def getDistance = plane.getD
 
-	val origo2D: Point = plane.closestPointTo( focalPoint )
+  //var focalPoint: Point = new geometry.Point(0, 0, -(d + f))
+  val vectorUp: Vector = new geometry.Vector(0, 1, 0)
 
-	var fLen2 = ( focalRange._1 + focalRange._2 ) / 2
-	def fPoint = origo2D + ( plane.normal * fLen2 )
+  private val radiusScale: Double = 2 << 3
+  private val radiusConstant: Double = 2.0 //px
+  private val focalRange = (1.0, 10000.0) //in meter
 
-	//These vectors describe the direction and magnitude of a pixel.
-	val yVect = vectorUp.unit
-	val xVect = yVect.crossP( plane.normal ).unit
+  //private val closestPointOnPlane = plane.closestPointTo(focalPoint)
 
-	val planePoints: Seq[Point] = Seq(origo2D + ( ( xVect * imgRes._1 ) + ( yVect * imgRes._2 ) ) / 2,
-		origo2D + ( ( xVect * imgRes._1 ) - ( yVect * imgRes._2 ) ) / 2,
-		origo2D - ( ( xVect * imgRes._1 ) + ( yVect * imgRes._2 ) ) / 2,
-		origo2D - ( ( xVect * imgRes._1 ) - ( yVect * imgRes._2 ) ) / 2 )
+  private val origo2D: Point = plane.closestPointTo(new Point(0,0,0))
 
-	private object original {
-		val _origo2D: Point = new Point( origo2D.x, origo2D.y, origo2D.z )
-		val _yVect: Vector = yVect.copy
-		val _xVect: Vector = xVect.copy
-		val dis = plane.D
-	}
+  private var renderVectors = true
+  
+  def toggleVectots {
+    renderVectors = !renderVectors
+  }
+  
+  private var focalLength = (focalRange._1 + focalRange._2) / 2
 
-	var rotationX = 0.0
-	var rotationY = 0.0
-	var rotationZ = 0.0
+  def getFocallength = focalLength
+  private def fPoint = origo2D + (plane.normal * focalLength)
 
-	def rotateTo( angleX: Double, angleY: Double, angleZ: Double ) = {
-		rotationX = ( angleX ) % ( math.Pi * 2 )
-		rotationY = ( angleY ) % ( math.Pi * 2 )
-		rotationZ = ( angleZ ) % ( math.Pi * 2 )
-		updateRotation
-	}
+  //These vectors describe the direction and magnitude of a pixel.
+  private val yVect = vectorUp.unit
+  private val xVect = yVect.crossP(plane.normal).unit
 
-	def rotateBy( angleX: Double, angleY: Double, angleZ: Double ) = {
-		rotationX = ( rotationX + angleX ) % ( math.Pi * 2 )
-		rotationY = ( rotationY + angleY ) % ( math.Pi * 2 )
-		rotationZ = ( rotationZ + angleZ ) % ( math.Pi * 2 )
+  private object original {
+    val _origo2D: Point = new Point(origo2D.x, origo2D.y, origo2D.z)
+    val _yVect: Vector = yVect.copy
+    val _xVect: Vector = xVect.copy
+    val dis = plane.getD
+  }
 
-		updateRotation
-	}
+  private var rotationX = 0.0
+  private var rotationY = 0.0
+  private var rotationZ = 0.0
+  def getRotX = rotationX
+  def getRotY = rotationY
+  def getRotZ = rotationZ
 
-	def setFocalLength( flen: Double ): Unit = {
-		fLen2 = flen
-		updateRotation
-	}
+  /** Sets the rotation to a particular value*/
+  def rotateTo(angleX: Double, angleY: Double, angleZ: Double) = {
+    rotationX = (angleX) % (math.Pi * 2)
+    rotationY = (angleY) % (math.Pi * 2)
+    rotationZ = (angleZ) % (math.Pi * 2)
+    updateRotation
+  }
 
-	private var distance = original.dis
-	def setDistance( dis: Double ): Unit = {
-		//plane.D = dis
-		origo2D.set( ( plane.normal * dis ).toPoint )
+  /** Alters the rotation by a particular value */
+  def rotateBy(angleX: Double, angleY: Double, angleZ: Double) = {
+    rotationX += angleX
+    rotationY += angleY 
+    rotationZ += angleZ 
 
-		println( plane.D )
-		distance = dis
-		setFocalLength( fLen2 )
-		println( plane.D )
+    updateRotation
+  }
 
-	}
+  /** Sets the focallength of the camera. Note that the values aren't realworld values.  */
+  def setFocalLength(flen: Double): Unit = {
+    focalLength = flen
+    updateRotation
+  }
 
-	private def updateRotation {
-		var rm = Matrices.identity( 3 )
-			.crossP( Matrices.rotationY( rotationY ) )
-			.crossP( Matrices.rotationX( rotationX ) )
-			.crossP( Matrices.rotationZ( rotationZ ) )
+  private var distance = original.dis
+  /** Sets the distance from the camera to the point. */
+  def setDistance(dis: Double): Unit = {
+    origo2D.set((plane.normal * dis).toPoint)
 
-		//Rotate origo
-		origo2D.set( original._origo2D.posVector.unit.*( distance ).crossP( rm ).toPoint() )
+    distance = dis
+    setFocalLength(focalLength)
 
-		//Redefine plane:
-		val normal = origo2D.posVector.unit * -1
-		val d = -( ( normal.x * origo2D.x ) + ( normal.y * origo2D.y ) + ( normal.z * origo2D.z ) )
+  }
 
-		//Rotate focalpoint
-		focalPoint = fPoint
+  /** Recalculates all values. Should be called after the state of the object is altered.  */
+  private def updateRotation {
+    var rm = Matrices.identity(3)
+      .crossP(Matrices.rotationZ(rotationZ))
+      .crossP(Matrices.rotationX(rotationX))
+      .crossP(Matrices.rotationY(rotationY))
 
-		xVect.set( original._xVect.crossP( rm ).unit )
-		yVect.set( original._yVect.crossP( rm ).unit )
+    //Rotate origo
+    origo2D.set(original._origo2D.posVector.unit.*(distance).crossP(rm).toPoint())
 
-		plane.set( normal.x, normal.y, normal.z, d )
-		t += 1
+    //Redefine plane:
+    val normal = origo2D.posVector.unit * -1
+    val d = -((normal.x * origo2D.x) + (normal.y * origo2D.y) + (normal.z * origo2D.z))
+    
 
-	}
+    xVect.set(original._xVect.crossP(rm).unit)
+    yVect.set(original._yVect.crossP(rm).unit)
 
-	private val zoomStep = 0.1
-	/**
-	 * Zooms in by moving the focalpoint away from the plane
-	 */
-	def zoomIn = {
-		val newFocalLength: Double = fLen2 + zoomStep
+    plane.set(normal.x, normal.y, normal.z, d)
 
-		if ( newFocalLength < focalRange._2 ) {
-			fLen2 += zoomStep
-			focalPoint = fPoint
-		} else {
-			fLen2 = focalRange._2
-			focalPoint = fPoint
-		}
-	}
+  }
 
-	/**
-	 * Zooms out by moving the focalpoint closer to the plane in the direction of the normal vector. //TODO
-	 */
-	def zoomOut = {
-		val newFocalLength: Double = fLen2 - zoomStep
+  /**
+   * Zooms in by moving the focalpoint away from the plane
+   */
+  def zoomIn = {
+    val newFocalLength: Double = focalLength * 1.01
 
-		if ( newFocalLength > focalRange._1 ) {
-			fLen2 -= zoomStep
-			focalPoint = fPoint
-		} else {
-			fLen2 = focalRange._1
-			focalPoint = fPoint
-		}
-	}
+    if (newFocalLength < focalRange._2) {
+      focalLength *= 1.01
+      //focalPoint = fPoint
+    } else {
+      focalLength = focalRange._2
+      //focalPoint = fPoint
+    }
+  }
 
-	private def componentFactors( point: Point ): ( Double, Double ) = {
-		//Distance between projected origin and point
-		val vect = new Vector( origo2D.x - point.x, origo2D.y - point.y, origo2D.z - point.z )
+  /**
+   * Zooms out by moving the focalpoint closer to the plane in the direction of the normal vector. //TODO
+   */
+  def zoomOut = {
+    val newFocalLength: Double = focalLength * 0.99
 
-		val A = new Matrix( Array(Array( xVect.x, yVect.x, plane.normal.x ),
-			Array( xVect.y, yVect.y, plane.normal.y ),
-			Array( xVect.z, yVect.z, plane.normal.z ) ) )
+    if (newFocalLength > focalRange._1) {
+      focalLength *= 0.99
+      //focalPoint = fPoint
+    } else {
+      focalLength = focalRange._1
+      //focalPoint = fPoint
+    }
+  }
+  /** Increases camera's distance to center*/
+  def moveOut = this.setDistance(distance * 1.1)
 
-		val ret = A.gj2( Array( vect.x, vect.y, vect.z ) )
+  /** Increases camera's distance to center*/
+  def moveIn = if (distance > 1000) this.setDistance(distance * 0.9)
 
-		( ret( 0 ), ret( 1 ) )
+  private def componentFactors(point: Point): (Double, Double) = {
+    //Distance between projected origin and point
+    val vect = new Vector(origo2D.x - point.x, origo2D.y - point.y, origo2D.z - point.z)
 
-	}
+    val A = new Matrix(Array(
+      Array(xVect.x, yVect.x, plane.normal.x, vect.x),
+      Array(xVect.y, yVect.y, plane.normal.y, vect.y),
+      Array(xVect.z, yVect.z, plane.normal.z, vect.z)))
+    
+    A.gaussJordan
+    
+    //val ret = A.gj2(Array(vect.x, vect.y, vect.z))
 
-	var can2 = new BufferedImage( imgRes._1.toInt, imgRes._2.toInt, BufferedImage.TYPE_INT_ARGB )
+    (A.getRow(0)(A.width-1), A.getRow(1)(A.width-1))
 
-	var t = 0
-	def capture( system: System ): BufferedImage = {
+  }
 
-		val g2d: Graphics2D = can2.createGraphics();
-		g2d.setColor( Color.BLACK )
-		g2d.fillRect( 0, 0, imgRes._1.toInt, imgRes._2.toInt )
+  /**
+   * Helper method that calculates the location of a point in space on the image plane.
+   */
+  private def projectOnCanvas(p: Vector): (Double, Double) = {
+    val line: Line = ((p - fPoint.posVector)).toLine(p.toPoint)
+    val o_loc: Point = plane.intersects(line)
+    val centerProjection = componentFactors(o_loc) // (x, y)
 
-		val sorted = system.bodies.sortBy( n => ( n.location - this.focalPoint.posVector ).magnitude ).reverse
+    return centerProjection
+  }
 
-		/*
-     * ATTEMPT TO ADD STARS TO GIVE THE VIEWER A REFERENCE POINT.
-    val stars_lines:Array[Line] = stars.map( star => ( (star.posVector - focalPoint.posVector) ).toLine(focalPoint) )
-    val starIntersection:Array[Point] = stars_lines.map(star => plane.intersects(star))
-    val stars2D:Array[(Double, Double)] = starIntersection.map(star => componentFactors(star))
-      .map( b =>  ( b._1 + imgRes._1, b._2 + imgRes._2) )
-    val rad = 10
-    for(star <- stars2D){
-      g2d.setColor(Color.WHITE)
-      g2d.fillOval( (star._1-rad).toInt , (star._2-rad).toInt , (2*rad).toInt, (2*rad).toInt );
-    }*/
+  /**
+   * Captures an image of the system.
+   * @param system The system that should be captured
+   * @param width The width of the camera's image plane
+   * @param height The height of the camera's image plane
+   * @return An image of the system as seen by the camera
+   */
+  def capture(system: System, width: Int, height: Int): BufferedImage = {
+    val canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+    val g2d: Graphics2D = canvas.createGraphics();
+    g2d.setColor(Color.BLACK)
+    g2d.fillRect(0, 0, width, height)
 
-		for ( body <- sorted ) {
-			//Find the projected center point & velocity direction
-			val vector_pos: Line = ( ( body.location - focalPoint.posVector ) ).toLine( body.location.toPoint )
-			val vector_loc: Line = ( body.location - focalPoint.posVector + ( body.velocity * geometry.Constants.dt ) ).toLine( focalPoint )
-			val vector_acc: Line = ( body.location - focalPoint.posVector + ( body.acceleration * math.pow( geometry.Constants.dt, 2 ) * 0.2 ) ).toLine( focalPoint )
+    val sorted = system.bodies.sortBy(n => (n.location - this.fPoint.posVector).magnitude).reverse
 
-			//Find the intersection with camera plane.
-			val o_loc: Point = plane.intersects( vector_pos )
-			val v_loc: Point = plane.intersects( vector_loc )
-			val a_loc: Point = plane.intersects( vector_acc )
+    for (body <- sorted) {
 
-			///FINDING THE RADIUS
-			//Find a unit vector perpendicular to the plane and multiply it by the radius
+      ///FINDING THE RADIUS
+      //Find a unit vector perpendicular to the plane and multiply it by the radius
 
-			val r = ( body.location - focalPoint.posVector ).crossP( yVect ).unit
-			val rad_vect = r * body.getRadius
+      val r = (body.location - fPoint.posVector).crossP(yVect).unit
+      val rad_vect = r * body.getRadius
 
-			//A origin vector representing a point on the radius. Goal is to find the projected distance of this point to the center
-			val radLoc = body.location + rad_vect
+      //A origin vector representing a point on the radius. Goal is to find the projected distance of this point to the center
+      val radLoc = body.location + rad_vect
 
-			//Plane's intersection with a line through the aforementioned point and the focal point.
-			val lin = ( radLoc - focalPoint.posVector ).toLine( focalPoint )
-			val r_location: Point = plane.intersects( lin )
+      //Plane's intersection with a line through the aforementioned point and the focal point.
+      val lin = (radLoc - fPoint.posVector).toLine(fPoint)
+      val r_location: Point = plane.intersects(lin)
 
-			/////////////////
-			//Find the projected center of each point. NOTE: Orgin assumed to be (0, 0), not center of screen.
+      /////////////////
+      //Find the projected center of each point. NOTE: Orgin assumed to be (0, 0), not center of screen.
 
-			val centerProjection = componentFactors( o_loc ) // (x, y)
-			val vLoc = componentFactors( v_loc )
-			val aLoc = componentFactors( a_loc )
-			val rLoc = componentFactors( r_location )
+      val centerProjection = projectOnCanvas(body.location)
+      val vLoc = projectOnCanvas(body.location + (body.velocity * 3600*24*7)) 
+      val aLoc = projectOnCanvas(body.location + (body.acceleration  * 3600*24*7 * 1e6)) 
 
-			//Finally calculate the projected length of the radius.
-			val egRad = math.sqrt( math.pow( centerProjection._1 - rLoc._1, 2 ) + math.pow( centerProjection._2 - rLoc._2, 2 ) )
-			var radius: Double = radiusConstant + math.pow( egRad, 0.5 ) * radiusScale
+      val rLoc = componentFactors(r_location)
 
-			if ( body.getName == "earth" ) {
-				t += 1
+      //Finally calculate the projected length of the radius.
+      val egRad = math.sqrt(math.pow(centerProjection._1 - rLoc._1, 2) + math.pow(centerProjection._2 - rLoc._2, 2))
+      var radius: Double = radiusConstant + math.pow(egRad, 0.5) * radiusScale
 
-				/*
-        println("plane	" + plane.A + " | " + plane.B + " | " + plane.C + " | " + plane.D)
+      //Sets the projected x and y values of the velocity vector arrow.
+      val velVect: (Int, Int) = ((width / 2 + vLoc._1).toInt, (height / 2 + vLoc._2).toInt)
 
-        println("Bloc:	" + body.location)
-        println("Oloc:	" + o_loc)
+      //Sets the projected x and y values of the acceleration vector
+      val accVect: (Int, Int) = ((width / 2 + aLoc._1).toInt, (height / 2 + aLoc._2).toInt)
 
-        println("IS:	  " + plane.intersects(vector_pos))
-        println("LineV:	" + vector_pos.vector)
-        println("LineP:	" + vector_pos.point)
+      val centerX = width / 2 + centerProjection._1
+      val centerY = height / 2 + centerProjection._2
 
-        println("Cent:  " + centerProjection._1 + " | " + centerProjection._2)
-        println("---------")*/
-			}
+      //Shape of the body.
+      val shape: Shape = new Ellipse2D.Double(
+        centerX - radius,
+        centerY - radius,
+        2.0 * radius,
+        2.0 * radius);
 
-			//Sets the projected x and y values of the velocity vector arrow.
-			val velVect: ( Int, Int ) = ( ( imgRes._1 / 2 + vLoc._1 ).toInt, ( imgRes._2 / 2 + vLoc._2 ).toInt )
+      //Don't draw objects behind image plane.
+      if ((fPoint - plane.normal.unit).distanceTo(body.location.toPoint()) > (fPoint + plane.normal.unit).distanceTo(body.location.toPoint())) {
 
-			//Sets the projected x and y values of the acceleration vector
-			val accVect: ( Int, Int ) = ( ( imgRes._1 / 2 + aLoc._1 ).toInt, ( imgRes._2 / 2 + aLoc._2 ).toInt )
+        if (renderVectors) {
+          
+          g2d.setColor(Color.WHITE)
 
-			val centerX = imgRes._1 / 2 + centerProjection._1
-			val centerY = imgRes._2 / 2 + centerProjection._2
+          g2d.drawLine(centerX.toShort, centerY.toShort, velVect._1, velVect._2)
 
-			//Shape of the body.
-			val shape: Shape = new Ellipse2D.Double(centerX - radius,
-				centerY - radius,
-				2.0 * radius,
-				2.0 * radius );
+          g2d.setColor(Color.RED)
+          g2d.drawLine(centerX.toInt, centerY.toInt, accVect._1, accVect._2)
 
-			//Draw what the camera sees.
-			//TODO Don't draw objects outside the camera's field of view.
-			if ( ( focalPoint - plane.normal.unit ).distanceTo( body.location.toPoint() ) > ( focalPoint + plane.normal.unit ).distanceTo( body.location.toPoint() ) ) {
-				g2d.setColor( Color.WHITE )
-				g2d.drawLine( centerX.toInt, centerY.toInt, velVect._1, velVect._2 )
-				g2d.setColor( Color.RED )
-				//g2d.drawLine(centerX.toInt, centerY.toInt, accVect._1, accVect._2)
+        }
 
-				g2d.setColor( body.getColor )
-				g2d.fill( shape )
-			} else {
-				//println(body.getName)
-			}
+        g2d.setColor(body.getColor)
+        g2d.fill(shape)
+      }
+    }
 
-		}
+    canvas
 
-		can2
-
-	}
+  }
 
 }
 
