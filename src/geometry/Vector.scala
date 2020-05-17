@@ -53,18 +53,13 @@ class Vector(
    * @param other The vector with which <u>this</u> should be multiplied.
    * @return A new Vector
    */
+  
+  def toMatrix:Matrix = new Matrix(Array(Array(x),Array(y),Array(z), Array(1)) )
+  
   def crossP(matrix: Matrix): Vector = {
-    require(matrix.height == 3 && matrix.width == 3, "Matrix should be of size 3 ✕ 3! Was: " + matrix.width + " ✕ " + matrix.height)
 
-    val ret: Array[Double] = Array(0, 0, 0)
-
-    for (i <- 0 until matrix.height) {
-      ret(i) += matrix.getRow(i)(0) * this.x_
-      ret(i) += matrix.getRow(i)(1) * this.y_
-      ret(i) += matrix.getRow(i)(2) * this.z_
-    }
-
-    new Vector(ret(0), ret(1), ret(2))
+    val ret = this.toMatrix.crossP(matrix)
+    new Vector(ret(0,0), ret(0,1), ret(0,2))
   }
 
   /** Dot product of two vectors. */
@@ -83,13 +78,6 @@ class Vector(
 
   }
 
-  /** Converts the Vector to a Point-object in R3. */
-  def toPoint(): Point = new Point(x_, y_, z_)
-
-  /** Converts the Vector to a Line-object that passes through a Point given as a parameter.*/
-  def toLine(point: Point): Line = {
-    new Line(point, this)
-  }
 
   /**
    * Sets the vector-components to those of the vector given as a parameter

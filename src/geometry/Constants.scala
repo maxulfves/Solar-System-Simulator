@@ -10,7 +10,7 @@ object Constants {
   val au: Double = 1.49598e11
   val smass: Double = 2.0e30
   
-  val fps: Double = 24
+  val fps: Double = 60
 
   val exampleSource = "resources/examples/solarsystem.gal"
   val exampleDirectory = "resources/examples"

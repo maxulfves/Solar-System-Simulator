@@ -10,6 +10,9 @@ import scala.swing.GridBagPanel
 import java.awt.GridBagConstraints
 import javax.swing.DefaultComboBoxModel
 import java.text.DecimalFormat
+import javax.swing.SpinnerNumberModel
+import javax.swing.event.ChangeListener
+import javax.swing.event.ChangeEvent
 
 /**
  * An object representing the right-side panel.
@@ -23,58 +26,15 @@ object RightPanel extends TabbedPane {
 
   def updateSystem() {
 
-    lw.listData = system.bodies.map(_.getName)
+    bodiesPanel.lw.listData = system.bodies.map(_.getName)
     graphPanel.update()
   }
 
-  def updateSelectionData() = {
-
-    val selection = system.bodies.filter(_.getName == lw.selection.items(0)).head
-    tw_name.text = lw.selection.items(0)
-    tw_mass.text = selection.getMass.toString()
-
-    tw_x.text = selection.location.x + ""
-    tw_y.text = selection.location.y + ""
-    tw_z.text = selection.location.z + ""
-
-    val col = selection.getColor()
-    tw_colour.text = "#%02x%02x%02x".format(col.getRed, col.getGreen, col.getBlue)
-
-    tw_vel_x.text = selection.velocity.x + ""
-    tw_vel_y.text = selection.velocity.y + ""
-    tw_vel_z.text = selection.velocity.z + ""
-    
-    labelSpeed.text = "Magnitude V: " + new DecimalFormat("#.##").format(selection.velocity.magnitude) + " m/s"
-    labelAcc.text = "Magnitude A: " + new DecimalFormat("0.0E0").format(selection.acceleration.magnitude) + " m/s^2"
-    radius.text = selection.getRadius + ""
-    
-  }
-
-  val lw = new scala.swing.ListView(system.bodies.map(_.getName))
-  val tw_name = new TextField()
-  val tw_mass = new TextField()
-  //Location
-
-  val tw_x = new TextField
-  val tw_y = new TextField
-  val tw_z = new TextField
-  //Velocity
-
-  val tw_vel_x = new TextField
-  val tw_vel_y = new TextField
-  val tw_vel_z = new TextField
-
-  val radius = new TextField
-
-  val tw_colour = new TextField
-  val labelSpeed = new Label("Magnitude V: ")
-  val labelAcc = new Label("Magnitude A: ")
-  
   def disable(arg: Boolean) = {
     setDisable(arg, bodiesPanel)
   }
 
-  def setDisable(arg: Boolean, arg2: Container): Unit = {
+  private def setDisable(arg: Boolean, arg2: Container): Unit = {
     for (element <- arg2.contents) {
       element match {
         case e: TextField    => e.editable = arg
@@ -87,6 +47,48 @@ object RightPanel extends TabbedPane {
   }
 
   val bodiesPanel = new GridBagPanel {
+    def updateSelectionData() = {
+
+      val selection = system.bodies.filter(_.getName == lw.selection.items(0)).head
+      tw_name.text = lw.selection.items(0)
+      tw_mass.text = selection.getMass.toString()
+
+      tw_x.text = selection.location.x + ""
+      tw_y.text = selection.location.y + ""
+      tw_z.text = selection.location.z + ""
+
+      val col = selection.getColor()
+      tw_colour.text = "#%02x%02x%02x".format(col.getRed, col.getGreen, col.getBlue)
+
+      tw_vel_x.text = selection.velocity.x + ""
+      tw_vel_y.text = selection.velocity.y + ""
+      tw_vel_z.text = selection.velocity.z + ""
+
+      labelSpeed.text = "Magnitude V: " + new DecimalFormat("00E0").format(selection.velocity.magnitude).replace("E", " * 10^") + " m/s"
+      labelAcc.text = "Magnitude A: " + new DecimalFormat("00E0").format(selection.acceleration.magnitude).replace("E", " * 10^") + " m/s^2"
+      radius.text = selection.getRadius + ""
+
+    }
+    val lw = new scala.swing.ListView(system.bodies.map(_.getName))
+    val tw_name = new TextField()
+    val tw_mass = new TextField()
+    //Location
+
+    val tw_x = new TextField
+    val tw_y = new TextField
+    val tw_z = new TextField
+    //Velocity
+
+    val tw_vel_x = new TextField
+    val tw_vel_y = new TextField
+    val tw_vel_z = new TextField
+
+    val radius = new TextField
+
+    val tw_colour = new TextField
+    val labelSpeed = new Label("Magnitude V: ")
+    val labelAcc = new Label("Magnitude A: ")
+
     def constraintsTop(x: Int, y: Int, width: Int = 1, height: Int = 1, weightx: Double = 0.0, weighty: Double = 0.0, fill: GridBagPanel.Fill.Value = GridBagPanel.Fill.None): Constraints = {
       val constraint = new Constraints
       constraint.anchor = GridBagPanel.Anchor.North
@@ -105,7 +107,6 @@ object RightPanel extends TabbedPane {
       reactions += {
         case action: ButtonClicked => {
 
-          //TODO Is name taken? Alt. Is name legit?
           if (!(system.bodies - selectedBody).exists(_.getName == tw_name.text)) {
             selectedBody.setMass(tw_mass.text.toDouble)
             selectedBody.setName(tw_name.text)
@@ -201,8 +202,8 @@ object RightPanel extends TabbedPane {
       add(tw_mass, constraints(1, 1, weightx = 1, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
       add(new Label("Radius"), constraints(0, 2, width = weightLeft))
       add(radius, constraints(1, 2, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
-      add(new swing.Separator, constraints(0, 3, width = (weightRight+weightLeft), fill = GridBagPanel.Fill.Horizontal))
-      
+      add(new swing.Separator, constraints(0, 3, width = (weightRight + weightLeft), fill = GridBagPanel.Fill.Horizontal))
+
       //Location
       add(new Label("Location X"), constraints(0, 4, width = weightLeft, fill = GridBagPanel.Fill.Horizontal))
       add(tw_x, constraints(1, 4, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
@@ -210,9 +211,8 @@ object RightPanel extends TabbedPane {
       add(tw_y, constraints(1, 5, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
       add(new Label("Location Z"), constraints(0, 6, width = weightLeft))
       add(tw_z, constraints(1, 6, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
-      add(new swing.Separator, constraints(0, 7, width = (weightRight+weightLeft), fill = GridBagPanel.Fill.Horizontal))
-      
-      
+      add(new swing.Separator, constraints(0, 7, width = (weightRight + weightLeft), fill = GridBagPanel.Fill.Horizontal))
+
       //Velocity
       add(new Label("Velocity X"), constraints(0, 8, width = weightLeft))
       add(tw_vel_x, constraints(1, 8, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
@@ -220,13 +220,13 @@ object RightPanel extends TabbedPane {
       add(tw_vel_y, constraints(1, 9, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
       add(new Label("Velocity Z"), constraints(0, 10, width = weightLeft))
       add(tw_vel_z, constraints(1, 10, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
-      
-      add(labelSpeed, constraints(0, 11, width = (weightLeft + weightRight), fill = GridBagPanel.Fill.Horizontal, weightx = 1 ))
-      add(new swing.Separator, constraints(0, 12, width = (weightRight+weightLeft), fill = GridBagPanel.Fill.Horizontal))
-      
-      add(labelAcc, constraints(0, 13, width = (weightLeft + weightRight), fill = GridBagPanel.Fill.Horizontal, weightx = 1 ))
-      add(new swing.Separator, constraints(0, 14, width = (weightRight+weightLeft), fill = GridBagPanel.Fill.Horizontal))
-      
+
+      add(labelSpeed, constraints(0, 11, width = (weightLeft + weightRight), fill = GridBagPanel.Fill.Horizontal, weightx = 1))
+      add(new swing.Separator, constraints(0, 12, width = (weightRight + weightLeft), fill = GridBagPanel.Fill.Horizontal))
+
+      add(labelAcc, constraints(0, 13, width = (weightLeft + weightRight), fill = GridBagPanel.Fill.Horizontal, weightx = 1))
+      add(new swing.Separator, constraints(0, 14, width = (weightRight + weightLeft), fill = GridBagPanel.Fill.Horizontal))
+
       //Control buttons
       add(new Label("Colour"), constraints(0, 15, width = weightLeft, fill = GridBagPanel.Fill.Horizontal))
       add(tw_colour, constraints(1, 15, width = weightRight, fill = GridBagPanel.Fill.Horizontal))
@@ -242,10 +242,9 @@ object RightPanel extends TabbedPane {
     add(bp, constraintsTop(0, 2, fill = GridBagPanel.Fill.Both))
 
     add(new scala.swing.Separator, constraintsTop(0, 3, 1, 1, 0, 1, GridBagPanel.Fill.Horizontal))
-    
+
   }
 
-  val bodies_page = new TabbedPane.Page("Bodies", bodiesPanel);
 
   val cameraPanel = new GridBagPanel() {
 
@@ -253,15 +252,14 @@ object RightPanel extends TabbedPane {
       super.paint(g)
 
       val arg = gui.SimulatorApp.getIsPaused
-      
-      
-      if(!arg){
+
+      if (!arg) {
         rotX.text = camera.getRotX.toDegrees.toString()
         rotY.text = camera.getRotY.toDegrees.toString()
         rotZ.text = camera.getRotZ.toDegrees.toString()
-        fLen.text = camera.getFocallength.toString()
+        angle_txt.text = camera.getFocalLength.toString()
         dis.text = camera.getDistance + ""
-      
+
       }
       for (element <- contents) {
         element match {
@@ -279,7 +277,7 @@ object RightPanel extends TabbedPane {
     val rotX = new TextField(camera.getRotX + "")
     val rotY = new TextField(camera.getRotY + "")
     val rotZ = new TextField(camera.getRotZ + "")
-    val fLen = new TextField(camera.getFocallength + "")
+    val angle_txt = new TextField(camera.getFocalLength + "")
 
     val dis = new TextField(camera.getDistance + "")
 
@@ -307,7 +305,7 @@ object RightPanel extends TabbedPane {
     }
 
     AddRow(new Label("Distance: "), dis)
-    AddRow(new Label("Focal length: "), fLen)
+    AddRow(new Label("Angle: "), angle_txt)
     AddRow(new Label("Rotation X: "), rotX)
     AddRow(new Label("Rotation Y: "), rotY)
     AddRow(new Label("Rotation Z: "), rotZ)
@@ -322,7 +320,7 @@ object RightPanel extends TabbedPane {
               rotY.text.toDouble.toRadians,
               rotZ.text.toDouble.toRadians)
 
-            camera.setFocalLength(fLen.text.toDouble)
+            camera.setFocalLength(angle_txt.text.toDouble)
             camera.setDistance(dis.text.toDouble)
           } catch {
             case e: NumberFormatException => Dialog.showMessage(message = e.getMessage, title = "Invalid input")
@@ -335,9 +333,7 @@ object RightPanel extends TabbedPane {
 
   }
 
-  val camera_settings = new TabbedPane.Page("Camera", new BoxPanel(Orientation.Vertical) {
-    contents += cameraPanel
-  });
+  
 
   val graphPanel = new GridBagPanel {
     val fields = Seq("", "X", "Y", "Z", "Velocity X", "Velocity Y", "Velocity Z")
@@ -579,22 +575,50 @@ object RightPanel extends TabbedPane {
       rowCount += 1
     }
 
+    def addRow(c: String) = {
+      val n = new Label(c)
+      n.horizontalAlignment = Alignment.Left
+      add(n, constraints(x = 0, y = rowCount, width = 1, height = 1, weightx = 1, weighty = 0))
+      rowCount += 1
+    }
+
+    val fps_spinner = new javax.swing.JSpinner(new SpinnerNumberModel(simulationCanvasPanel.fps, 1, 200, 1))
+    val sps_spinner = new javax.swing.JSpinner(new SpinnerNumberModel(simulationCanvasPanel.sps, 1, 1000, 1))
+
+    fps_spinner.addChangeListener(new ChangeListener() {
+      override def stateChanged(e: ChangeEvent) {
+        simulationCanvasPanel.fps = (fps_spinner.getValue + "").toInt
+      }
+    })
+    
+    sps_spinner.addChangeListener(new ChangeListener() {
+      override def stateChanged(e: ChangeEvent) {
+        simulationCanvasPanel.sps = (sps_spinner.getValue + "").toInt
+      }
+    })
+    
     addRow(l_name)
     addRow(time)
     addRow(endTime)
     addRow(timestep)
     addRow(totalMass)
     addRow(bodyCount)
-    add(new Separator, constraints(x = 0, y = rowCount, width = 1, height = 1, weightx = 0, weighty = 1))
-
+    
+    add(new Separator, constraints(x = 0, y = rowCount, width = 1, height = 1, weightx = 0, weighty = 0))
+    rowCount += 1
+    addRow("Attempted frames per second [1, 200]")
+    add(Component.wrap(fps_spinner), constraints(x = 0, y = rowCount, width = 1, height = 1, weightx = 0, weighty = 0))
+    rowCount += 1
+    add(new Separator, constraints(x = 0, y = rowCount, width = 1, height = 1, weightx = 0, weighty = 0))
+    rowCount += 1
+    addRow("Attempted simulations per second [1, 1000]")
+    add(Component.wrap(sps_spinner), constraints(x = 0, y = rowCount, width = 1, height = 1, weightx = 0, weighty = 1))
+    rowCount += 1
   }
-
-  val simulation_page = new TabbedPane.Page("Simulation", simulationPanel)
-  val graphPage = new TabbedPane.Page("Graph", graphPanel)
-
-  pages.addOne(simulation_page)
-  pages.addOne(bodies_page)
-  pages.addOne(camera_settings)
-  pages.addOne(graphPage)
+  
+  pages.addOne(new TabbedPane.Page("Bodies", bodiesPanel))
+  pages.addOne(new TabbedPane.Page("Camera", cameraPanel))
+  pages.addOne(new TabbedPane.Page("Graph", graphPanel))
+  pages.addOne(new TabbedPane.Page("Simulation", simulationPanel))
 
 }

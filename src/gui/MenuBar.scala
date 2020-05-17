@@ -80,6 +80,11 @@ object MenuBar extends scala.swing.MenuBar {
         case c: ButtonClicked => gui.SimulatorApp.camera.toggleVectots
       }
     }
+    contents += new MenuItem("Toggle stars") {
+      reactions += {
+        case c: ButtonClicked => gui.SimulatorApp.camera.toggleStars
+      }
+    }
     contents += new MenuItem("Alter timestep") {
       reactions += {
         case c: ButtonClicked => {

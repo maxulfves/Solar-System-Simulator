@@ -12,7 +12,7 @@ object HelpWindow extends JPanel {
   val bob = new JScrollPane(test)
   
   this.setPreferredSize(new Dimension(320, 200))
-  test.setPreferredSize(new Dimension(300, 900))
+  test.setPreferredSize(new Dimension(300, 940))
   
   val fontx = new Font(null, java.awt.Font.PLAIN, 10);    
   test.setFont(fontx)

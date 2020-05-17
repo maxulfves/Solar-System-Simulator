@@ -18,8 +18,12 @@ class Matrix(input: Array[Array[Double]]) {
 
   def getRow(n: Int) = seq(n)
 
+  def apply(n:Int, m:Int):Double = {
+    seq(m)(n)
+  }
+  
   def this(n: Int, m: Int) = {
-    this(Array.fill(n)(Array.fill(m)(0)))
+    this(Array.fill(m)(Array.fill(n)(0)))
   }
 
   def __==(other: Matrix): Boolean = {
@@ -41,16 +45,15 @@ class Matrix(input: Array[Array[Double]]) {
   def crossP(B: Matrix): Matrix = {
     require(this.height == B.width, "Width height wrong")
     val m = this.height
-
-    val C = new Matrix(width, B.height)
-
-    for (i <- 0 to C.width - 1) {
-      for (j <- 0 to C.height - 1) {
+    
+    val C = new Matrix(this.width, B.height)
+    for (i <- 0 until C.width ) {
+      for (j <- 0 until C.height) {
         var sum: Double = 0
-        for (k <- 0 to m - 1) {
-          sum = sum + (seq(i)(k) * B.seq(k)(j))
+        for (k <- 0 until m) {
+          sum += (seq(k)(i) * B.seq(j)(k))
         }
-        C.seq(i)(j) = sum
+        C.seq(j)(i) = sum
       }
     }
 

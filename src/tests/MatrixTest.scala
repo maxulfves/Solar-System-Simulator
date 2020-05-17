@@ -4,21 +4,7 @@ import org.junit.Test
 import geometry._
 
 class MatrixTest {
-/*
-  @Test def gaussJordan() {
-    val A = new Matrix(Seq(
-          Seq(1, 0, 0, 5),
-          Seq(0, 1, 0, 6),
-          Seq(0, 0, 1, 0)
-    ))
-    
-    assert(A.gaussJordan(0) == 5, "A.gaussJordan(0) was " + A.gaussJordan(0))
-    assert(A.gaussJordan(1) == 6, "A.gaussJordan(1) was " + A.gaussJordan(1))
-    assert(A.gaussJordan(2) == 0, "A.gaussJordan(2) was " + A.gaussJordan(2))
-    
-    
-  }
-  */
+
   @Test def gaussJordanWithZeroRow() {
     
     val A = new Matrix(Array(
@@ -50,5 +36,28 @@ class MatrixTest {
     val errorMargin = (test - correct).magnitude
     assert(errorMargin < 1e-15, "Rotate X failed. Error was: " + errorMargin)
   }
+  
+  @Test def translate(){
+    val A = new Vector(1.0,2.0,3.0)
+    val B = Matrices.translate(1.0, 2.0, 3.0)
+    val C = A.crossP(B)
+    val exp = new Vector(2,4,6)
+   
+    assert((C - exp).magnitude <  1e-15, "(1,2,3) translated by (1,2,3) should give "+ exp +". Gave : " + C)
+  }
+  
+  @Test def VectorMagnitude(){
+    val a = new Vector(1,5,10)
+    val exp = 11.224972160
+    assert(a.magnitude - exp < 1e-5)
+  }
+  
+  @Test def VectorUnit(){
+    val A = new Vector(20, 0, 0)
+    val B = A.unit
+    val exp = new Vector(1,0,0)
+   
+    assert((B - exp).magnitude < 1e-5, "Difference shouldn be zero. Was: "+ (B - exp))
+  }  
   
 }

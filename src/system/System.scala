@@ -112,7 +112,6 @@ class System(private var name: String, private var timeStep:Long, private var en
 
       //Checks if body hits any other body.
       for(body <- bodies){
-        val path = new Line(body.location.toPoint(), body.velocity)
         for(other <-bodies - body){
           if((other.location - body.location).magnitude < body.getRadius + other.getRadius + (body.velocity*timeStep).magnitude){
             val vect = (body.location - other.location).crossP(body.velocity)

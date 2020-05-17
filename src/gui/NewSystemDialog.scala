@@ -108,7 +108,7 @@ object NewSystemDialog extends JOptionPane {
         result = Some(system)
         dialog.setVisible(false)
       } catch {
-        case e: IllegalArgumentException => e.printStackTrace() //scala.swing.Dialog.showMessage( null, e.getMessage.replace("requirement failed: ", ""), "Invalid input")
+        case e: IllegalArgumentException => scala.swing.Dialog.showMessage( null, e.getMessage.replace("requirement failed: ", ""), "Invalid input")
         case e:NumberFormatException => scala.swing.Dialog.showMessage( null, e.getMessage, "Invalid input")
       }
     }

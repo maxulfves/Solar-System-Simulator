@@ -38,7 +38,7 @@ import javax.swing.JOptionPane
 object SimulatorApp extends SimpleSwingApplication {
   
   
-  /** Determins if graph should be tracking something. */  
+  /** Determines if graph should be tracking something. */  
   var tracking:Boolean = false
   var openedFile:Option[File] = None
   var isExample:Boolean = false
@@ -67,7 +67,7 @@ object SimulatorApp extends SimpleSwingApplication {
   
 
 
-  val angle = 1.toRadians
+  val angle = 0.75.toRadians
   
   def onKeyPress(keyCode: Value) = {
     
@@ -157,7 +157,7 @@ object SimulatorApp extends SimpleSwingApplication {
     
     
     if (distanceTo && (graphData.bodyA.isDefined && graphData.bodyB.isDefined)) {
-      y = graphData.bodyA.head.location.toPoint().distanceTo(graphData.bodyB.head.location.toPoint())
+      y = (graphData.bodyA.head.location + graphData.bodyB.head.location).magnitude
     }
 
     if (graphData.xTime) {
@@ -210,7 +210,7 @@ object SimulatorApp extends SimpleSwingApplication {
   def restart = {
     println("restarted")
     system = initial.copy
-    RightPanel.lw.listData = system.bodies.map(b => b.getName)
+    RightPanel.bodiesPanel.lw.listData = system.bodies.map(b => b.getName)
     graph.clear
     tracking = false
   }
@@ -219,7 +219,7 @@ object SimulatorApp extends SimpleSwingApplication {
   def exit = {
     System.exit(1)
   }
-
+  
   def save = {
     openedFile match {
       case Some(file) => mySerializer.serialize(system, file)
